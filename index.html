@@ -1,63 +1,95 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="fc:frame" content="vNext">
     <meta name="base:app_id" content="694aad2e4d3a403912ed7cc9">
-    <title>Şans Çarkı</title>
+    <title>SpinON</title>
     <link rel="icon" type="image/png" id="favicon" href="">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
-        <header>
-            <div class="logo-container">
-                <canvas id="logoCanvas" width="44" height="44"></canvas>
-                <h1>Şans Çarkı</h1>
-            </div>
-            <div class="spins-left">
-                <span id="spinsCount">5</span> / 5 Hak
-            </div>
-        </header>
-
-        <main>
-            <div class="wheel-container">
-                <div class="wheel-pointer"></div>
-                <canvas id="wheelCanvas" width="320" height="320"></canvas>
-            </div>
-
-            <button id="spinBtn" class="spin-button">
-                <span>ÇEVİR</span>
-            </button>
-        </main>
-
-        <button id="settingsBtn" class="settings-btn">⚙️ Dilimleri Düzenle</button>
-
-        <!-- Sonuç Popup -->
-        <div id="resultPopup" class="popup hidden">
-            <div class="popup-content">
-                <div class="popup-icon">🎉</div>
-                <h2>Tebrikler!</h2>
-                <p id="resultText">Kazandın: 50 Puan</p>
-                <button id="closePopup" class="close-btn">Tamam</button>
-            </div>
-        </div>
-
-        <!-- Ayarlar Popup -->
-        <div id="settingsPopup" class="popup hidden">
-            <div class="popup-content settings-content">
-                <h2>🎨 Dilim Ayarları</h2>
-                <div id="segmentsList" class="segments-list"></div>
-                <div class="settings-actions">
-                    <button id="addSegment" class="add-btn">+ Dilim Ekle</button>
-                    <button id="saveSettings" class="save-btn">Kaydet</button>
+        <!-- Wheel Area -->
+        <div class="wheel-area">
+            <div class="wheel-wrapper" id="wheelWrapper">
+                <div class="wheel-container">
+                    <div class="wheel-pointer"></div>
+                    <canvas id="wheelCanvas" width="280" height="280"></canvas>
+                    <div class="wheel-center">
+                        <span class="wheel-center-icon">🎰</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Decorative Diamonds -->
+            <div class="diamonds-row">
+                <div class="diamond" id="d1"></div>
+                <div class="diamond" id="d2"></div>
+                <div class="diamond active" id="d3"></div>
+                <div class="diamond" id="d4"></div>
+                <div class="diamond" id="d5"></div>
+            </div>
         </div>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <h2 class="card-title">LUCKY SPIN</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Spins Left</div>
+                    <div class="stat-value">
+                        <span id="spinsCount">5</span>
+                        <span class="icon">🎫</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Spins</div>
+                    <div class="stat-value">
+                        <span id="totalSpins">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="spinBtn" class="spin-btn">
+                SPIN NOW
+            </button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active">
+                <span class="nav-icon">🏠</span>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" id="profileBtn">
+                <span class="nav-icon">👤</span>
+                <span>Profile</span>
+            </button>
+            <button class="nav-item" id="leaderboardBtn">
+                <span class="nav-icon">📊</span>
+                <span>Stats</span>
+            </button>
+            <button class="nav-item" id="soundBtn">
+                <span class="nav-icon">🔊</span>
+                <span>Sound</span>
+            </button>
+        </nav>
+
+        <!-- Result Popup -->
+        <div id="resultPopup" class="popup hidden">
+            <div class="popup-content">
+                <div class="popup-emoji">🎉</div>
+                <h2>Congratulations!</h2>
+                <p id="resultText">You won: <strong>50 Points</strong></p>
+                <button id="closePopup" class="popup-btn">Continue</button>
+            </div>
+        </div>
+
     </div>
 
     <script type="module" src="game.js"></script>
 </body>
 </html>
-
