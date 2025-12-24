@@ -5,11 +5,11 @@ sdk.actions.ready();
 
 // Default segments - Crypto theme with images
 const defaultSegments = [
-    { name: 'Bitcoin', color: '#7c3aed', gradient: '#a855f7', img: 'cbbtc.png' },
-    { name: 'Ethereum', color: '#8b5cf6', gradient: '#c084fc', img: 'cbeth.png' },
-    { name: 'USDC', color: '#6d28d9', gradient: '#8b5cf6', img: 'usdc.png' },
-    { name: 'Toshi', color: '#7c3aed', gradient: '#a855f7', img: 'toshi.png' },
-    { name: 'Nothing', color: '#5b21b6', gradient: '#7c3aed', img: null }
+    { name: 'Bitcoin', color: '#0052FF', gradient: '#4285F4', img: 'cbbtc.png' },
+    { name: 'Ethereum', color: '#0066FF', gradient: '#A8C7FA', img: 'cbeth.png' },
+    { name: 'USDC', color: '#001845', gradient: '#0066FF', img: 'usdc.png' },
+    { name: 'Toshi', color: '#0052FF', gradient: '#4285F4', img: 'toshi.png' },
+    { name: 'Nothing', color: '#001233', gradient: '#0052FF', img: null }
 ];
 
 // Preload images
@@ -49,20 +49,15 @@ const closePopup = document.getElementById('closePopup');
 const wheelWrapper = document.getElementById('wheelWrapper');
 const soundBtn = document.getElementById('soundBtn');
 
-// Diamonds
-const diamonds = [
-    document.getElementById('d1'),
-    document.getElementById('d2'),
-    document.getElementById('d3'),
-    document.getElementById('d4'),
-    document.getElementById('d5')
-];
-
-// Update diamonds based on spin result
-function updateDiamonds() {
-    diamonds.forEach(d => d.classList.remove('active'));
-    const activeDiamond = Math.floor(Math.random() * diamonds.length);
-    diamonds[activeDiamond].classList.add('active');
+// Logo animation
+function animateLogo() {
+    const logoBox = document.querySelector('.base-logo-box');
+    if (logoBox) {
+        logoBox.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+            logoBox.style.transform = 'scale(1)';
+        }, 300);
+    }
 }
 
 
@@ -105,7 +100,7 @@ function drawWheel(rotation = 0) {
         ctx.fill();
         
         // Segment border
-        ctx.strokeStyle = 'rgba(233, 213, 255, 0.4)';
+        ctx.strokeStyle = 'rgba(168, 199, 250, 0.4)';
         ctx.lineWidth = 2;
         ctx.stroke();
         
@@ -124,7 +119,7 @@ function drawWheel(rotation = 0) {
             // Draw X for Nothing
             ctx.save();
             ctx.translate(iconX, iconY);
-            ctx.strokeStyle = '#e9d5ff';
+            ctx.strokeStyle = '#A8C7FA';
             ctx.lineWidth = 4;
             ctx.lineCap = 'round';
             ctx.beginPath();
@@ -139,11 +134,11 @@ function drawWheel(rotation = 0) {
     
     // Outer metallic ring
     const ringGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    ringGradient.addColorStop(0, '#c084fc');
-    ringGradient.addColorStop(0.3, '#e9d5ff');
-    ringGradient.addColorStop(0.5, '#a855f7');
-    ringGradient.addColorStop(0.7, '#e9d5ff');
-    ringGradient.addColorStop(1, '#c084fc');
+    ringGradient.addColorStop(0, '#4285F4');
+    ringGradient.addColorStop(0.3, '#A8C7FA');
+    ringGradient.addColorStop(0.5, '#0066FF');
+    ringGradient.addColorStop(0.7, '#A8C7FA');
+    ringGradient.addColorStop(1, '#4285F4');
     
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 8, 0, 2 * Math.PI);
@@ -154,7 +149,7 @@ function drawWheel(rotation = 0) {
     // Ring highlight
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 13, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(233, 213, 255, 0.5)';
+    ctx.strokeStyle = 'rgba(168, 199, 250, 0.5)';
     ctx.lineWidth = 2;
     ctx.stroke();
     
@@ -222,7 +217,7 @@ function vibrate(pattern = [50]) {
 
 // Confetti effect
 function createConfetti() {
-    const colors = ['#e9d5ff', '#c084fc', '#a855f7', '#8b5cf6', '#d8b4fe', '#f3e8ff'];
+    const colors = ['#A8C7FA', '#4285F4', '#0066FF', '#0052FF', '#BCD4F8', '#E3F2FD'];
     
     for (let i = 0; i < 50; i++) {
         const confetti = document.createElement('div');
@@ -342,8 +337,8 @@ function finishSpin() {
     
     resultPopup.classList.remove('hidden');
 
-    // Update diamonds animation
-    updateDiamonds();
+    // Animate logo
+    animateLogo();
 }
 
 
@@ -372,10 +367,10 @@ function createFavicon() {
     
     ctx.beginPath();
     ctx.arc(center, center, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = '#1a0a2e';
+    ctx.fillStyle = '#001233';
     ctx.fill();
-    
-    ctx.fillStyle = '#c084fc';
+
+    ctx.fillStyle = '#4285F4';
     ctx.beginPath();
     ctx.moveTo(center, 0);
     ctx.lineTo(center - 4, 6);
@@ -394,7 +389,7 @@ function createSparkles() {
         sparkle.style.width = '6px';
         sparkle.style.height = '6px';
         sparkle.style.borderRadius = '50%';
-        sparkle.style.background = ['#e9d5ff', '#c084fc', '#a855f7'][Math.floor(Math.random() * 3)];
+        sparkle.style.background = ['#A8C7FA', '#4285F4', '#0066FF'][Math.floor(Math.random() * 3)];
         sparkle.style.pointerEvents = 'none';
         sparkle.style.zIndex = '200';
 
@@ -531,6 +526,5 @@ adClose.addEventListener('click', (e) => {
 // Initialize
 createFavicon();
 totalSpinsEl.textContent = totalSpins;
-updateDiamonds();
 
 drawWheel();
