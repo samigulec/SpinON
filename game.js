@@ -500,7 +500,7 @@ const panoAds = [
         image: 'onchaingm.png',
         title: 'Your Daily Web3 Ritual. GM every day!',
         cta: 'Say GM',
-        link: 'https://farcaster.xyz/miniapps/WJydZUDypPkb/onchaingm'
+        link: 'https://farcaster.xyz/miniapps/WJydZUDypPkb/onchaingm',
     },
    {
         image: 'infinityname.jpg',
