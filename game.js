@@ -3,14 +3,32 @@ import { sdk } from 'https://esm.sh/@farcaster/frame-sdk';
 // Farcaster SDK başlat
 sdk.actions.ready();
 
-// Default segments - Crypto theme
+// Default segments - Crypto theme with images
 const defaultSegments = [
-    { name: 'Bitcoin', color: '#f7931a', gradient: '#ffb347', icon: 'btc' },
-    { name: 'Ethereum', color: '#627eea', gradient: '#9c88ff', icon: 'eth' },
-    { name: 'USDC', color: '#2775ca', gradient: '#74b9ff', icon: 'usdc' },
-    { name: 'Toshi', color: '#0052ff', gradient: '#5f9fff', icon: 'toshi' },
-    { name: 'Nothing', color: '#2d1b4e', gradient: '#4a3f6b', icon: 'x' }
+    { name: 'Bitcoin', color: '#1a56db', gradient: '#3b82f6', img: 'cbbtc.png' },
+    { name: 'Ethereum', color: '#1a56db', gradient: '#3b82f6', img: 'cbeth.png' },
+    { name: 'USDC', color: '#2775ca', gradient: '#60a5fa', img: 'usdc.png' },
+    { name: 'Toshi', color: '#0052ff', gradient: '#3b82f6', img: 'toshi.png' },
+    { name: 'Nothing', color: '#1e1b4b', gradient: '#312e81', img: null }
 ];
+
+// Preload images
+const images = {};
+let imagesLoaded = 0;
+
+defaultSegments.forEach(segment => {
+    if (segment.img) {
+        const img = new Image();
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === defaultSegments.filter(s => s.img).length) {
+                drawWheel();
+            }
+        };
+        img.src = segment.img;
+        images[segment.img] = img;
+    }
+});
 
 // State - Always use default segments (no customization)
 let segments = defaultSegments;
@@ -85,119 +103,6 @@ function updateDiamonds() {
     });
 }
 
-// Draw custom icon
-function drawIcon(ctx, icon, x, y, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    
-    const s = size;
-    
-    switch(icon) {
-        case 'btc':
-            // Bitcoin - Orange coin with B
-            ctx.beginPath();
-            ctx.arc(0, 0, s, 0, 2 * Math.PI);
-            ctx.fillStyle = '#f7931a';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // B letter
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${s * 1.2}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('₿', 0, 0);
-            break;
-            
-        case 'eth':
-            // Ethereum - Diamond shape
-            ctx.beginPath();
-            ctx.moveTo(0, -s);
-            ctx.lineTo(s * 0.7, 0);
-            ctx.lineTo(0, s);
-            ctx.lineTo(-s * 0.7, 0);
-            ctx.closePath();
-            ctx.fillStyle = '#627eea';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // Inner diamond
-            ctx.beginPath();
-            ctx.moveTo(0, -s * 0.5);
-            ctx.lineTo(s * 0.35, 0);
-            ctx.lineTo(0, s * 0.5);
-            ctx.lineTo(-s * 0.35, 0);
-            ctx.closePath();
-            ctx.fillStyle = '#8c9eff';
-            ctx.fill();
-            break;
-            
-        case 'usdc':
-            // USDC - Blue coin with $
-            ctx.beginPath();
-            ctx.arc(0, 0, s, 0, 2 * Math.PI);
-            ctx.fillStyle = '#2775ca';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // $ symbol
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${s * 1.3}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('$', 0, 0);
-            break;
-            
-        case 'toshi':
-            // Toshi - Blue circle with T
-            ctx.beginPath();
-            ctx.arc(0, 0, s, 0, 2 * Math.PI);
-            ctx.fillStyle = '#0052ff';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // T letter
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${s * 1.2}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('T', 0, 0);
-            break;
-            
-        case 'x':
-            // X - Red X mark
-            ctx.beginPath();
-            ctx.arc(0, 0, s, 0, 2 * Math.PI);
-            ctx.fillStyle = '#4a3f6b';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // X mark
-            ctx.strokeStyle = '#ff6b6b';
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(-s * 0.5, -s * 0.5);
-            ctx.lineTo(s * 0.5, s * 0.5);
-            ctx.moveTo(s * 0.5, -s * 0.5);
-            ctx.lineTo(-s * 0.5, s * 0.5);
-            ctx.stroke();
-            break;
-    }
-    
-    ctx.restore();
-}
-
 // Draw wheel
 function drawWheel(rotation = 0) {
     const centerX = canvas.width / 2;
@@ -241,19 +146,41 @@ function drawWheel(rotation = 0) {
         ctx.lineWidth = 2;
         ctx.stroke();
         
-        // Draw icon
+        // Draw image or X
         const iconX = centerX + Math.cos(midAngle) * radius * 0.6;
         const iconY = centerY + Math.sin(midAngle) * radius * 0.6;
-        drawIcon(ctx, segment.icon, iconX, iconY, 18);
+        const iconSize = 36;
+        
+        if (segment.img && images[segment.img]) {
+            ctx.save();
+            ctx.translate(iconX, iconY);
+            ctx.rotate(midAngle + Math.PI / 2);
+            ctx.drawImage(images[segment.img], -iconSize/2, -iconSize/2, iconSize, iconSize);
+            ctx.restore();
+        } else if (!segment.img) {
+            // Draw X for Nothing
+            ctx.save();
+            ctx.translate(iconX, iconY);
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-10, -10);
+            ctx.lineTo(10, 10);
+            ctx.moveTo(10, -10);
+            ctx.lineTo(-10, 10);
+            ctx.stroke();
+            ctx.restore();
+        }
     });
     
     // Outer metallic ring
     const ringGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    ringGradient.addColorStop(0, '#c084fc');
-    ringGradient.addColorStop(0.3, '#e0b0ff');
-    ringGradient.addColorStop(0.5, '#9333ea');
-    ringGradient.addColorStop(0.7, '#e0b0ff');
-    ringGradient.addColorStop(1, '#7c3aed');
+    ringGradient.addColorStop(0, '#3b82f6');
+    ringGradient.addColorStop(0.3, '#60a5fa');
+    ringGradient.addColorStop(0.5, '#1d4ed8');
+    ringGradient.addColorStop(0.7, '#60a5fa');
+    ringGradient.addColorStop(1, '#2563eb');
     
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 8, 0, 2 * Math.PI);
@@ -427,7 +354,7 @@ function finishSpin() {
     createConfetti();
     
     // Show result
-    const isLoss = winner.icon === 'x' || winner.name === 'Nothing';
+    const isLoss = winner.img === null || winner.name === 'Nothing';
     
     // Update popup based on result
     const popupEmoji = document.querySelector('.popup-emoji');
@@ -515,6 +442,94 @@ resultPopup.addEventListener('click', (e) => {
 soundBtn.addEventListener('click', () => {
     soundEnabled = !soundEnabled;
     soundBtn.querySelector('.nav-icon').textContent = soundEnabled ? '🔊' : '🔇';
+});
+
+// Ad Banner System
+const ads = [
+    {
+        image: 'superboard.png',
+        title: 'Superboard',
+        desc: 'Meet the new OnchainGM campaign!',
+        cta: 'Join Now',
+        link: 'https://superboard.xyz/campaigns/meet-the-new-onchaingm'
+    },
+    {
+        image: 'onchaingm.png',
+        title: 'OnchainGM',
+        desc: 'Your Daily Web3 Ritual. GM every day!',
+        cta: 'Say GM',
+        link: 'https://onchaingm.com/'
+    },
+    {
+        image: 'infinityname.jpg',
+        title: 'Infinity Name',
+        desc: 'Get your unique Web3 domain name!',
+        cta: 'Get Yours',
+        link: 'https://infinityname.com'
+    }
+];
+
+let currentAdIndex = 0;
+let adBannerVisible = true;
+let adRotationInterval;
+
+const adBanner = document.getElementById('adBanner');
+const adImage = document.getElementById('adImage');
+const adTitle = document.getElementById('adTitle');
+const adDesc = document.getElementById('adDesc');
+const adCta = document.getElementById('adCta');
+const adLink = document.getElementById('adLink');
+const adClose = document.getElementById('adClose');
+const adDots = document.querySelectorAll('.ad-dot');
+
+function showAd(index) {
+    currentAdIndex = index;
+    const ad = ads[index];
+    adImage.src = ad.image;
+    adTitle.textContent = ad.title;
+    adDesc.textContent = ad.desc;
+    adCta.textContent = ad.cta;
+    adLink.href = ad.link;
+    adBanner.classList.add('show');
+    
+    // Update dots
+    adDots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+
+function rotateAds() {
+    if (!adBannerVisible) return;
+    currentAdIndex = (currentAdIndex + 1) % ads.length;
+    showAd(currentAdIndex);
+}
+
+// Dot click handlers
+adDots.forEach(dot => {
+    dot.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const index = parseInt(dot.dataset.index);
+        showAd(index);
+        
+        // Reset rotation timer
+        clearInterval(adRotationInterval);
+        adRotationInterval = setInterval(rotateAds, 10000);
+    });
+});
+
+// Start ad rotation
+setTimeout(() => {
+    showAd(0);
+    adRotationInterval = setInterval(rotateAds, 10000); // Rotate every 10 seconds
+}, 3000); // Show first ad after 3 seconds
+
+adClose.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    adBanner.classList.remove('show');
+    adBannerVisible = false;
+    clearInterval(adRotationInterval);
 });
 
 // Initialize
