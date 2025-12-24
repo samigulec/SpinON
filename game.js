@@ -476,7 +476,7 @@ const panoAds = [
         image: 'superboard.png',
         title: 'Meet the new OnChainGM',
         cta: 'Join Now',
-        link: 'https://superboard.xyz/campaigns/meet-the-new-onchaingm
+        link: 'https://superboard.xyz/campaigns/meet-the-new-onchaingm'
     }
 ];
 
