@@ -49,15 +49,19 @@ const closePopup = document.getElementById('closePopup');
 const wheelWrapper = document.getElementById('wheelWrapper');
 const soundBtn = document.getElementById('soundBtn');
 
-// Logo animation
-function animateLogo() {
-    const logoBox = document.querySelector('.base-logo-box');
-    if (logoBox) {
-        logoBox.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            logoBox.style.transform = 'scale(1)';
-        }, 300);
-    }
+// Boxes animation
+const boxes = [
+    document.getElementById('box1'),
+    document.getElementById('box2'),
+    document.getElementById('box3'),
+    document.getElementById('box4'),
+    document.getElementById('box5')
+];
+
+function animateBoxes() {
+    boxes.forEach(box => box.classList.remove('active'));
+    const activeBox = Math.floor(Math.random() * boxes.length);
+    boxes[activeBox].classList.add('active');
 }
 
 
@@ -337,8 +341,8 @@ function finishSpin() {
     
     resultPopup.classList.remove('hidden');
 
-    // Animate logo
-    animateLogo();
+    // Animate boxes
+    animateBoxes();
 }
 
 
