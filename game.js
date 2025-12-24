@@ -32,17 +32,16 @@ defaultSegments.forEach(segment => {
 
 // State - Always use default segments (no customization)
 let segments = defaultSegments;
-let spinsLeft = getSpinsLeft();
 let totalSpins = parseInt(localStorage.getItem('totalSpins')) || 0;
 let isSpinning = false;
 let currentRotation = 0;
 let soundEnabled = true;
+let winStreak = 0;
+let lossStreak = 0;
 
 // DOM Elements
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d');
-const spinBtn = document.getElementById('spinBtn');
-const spinsCountEl = document.getElementById('spinsCount');
 const totalSpinsEl = document.getElementById('totalSpins');
 const resultPopup = document.getElementById('resultPopup');
 const resultText = document.getElementById('resultText');
@@ -59,49 +58,13 @@ const diamonds = [
     document.getElementById('d5')
 ];
 
-// Daily spin check
-function getSpinsLeft() {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem('spinDate');
-    const savedSpins = localStorage.getItem('spinsLeft');
-    
-    if (savedDate !== today) {
-        localStorage.setItem('spinDate', today);
-        localStorage.setItem('spinsLeft', '5');
-        return 5;
-    }
-    
-    return parseInt(savedSpins) || 0;
-}
-
-function updateSpinsLeft() {
-    spinsLeft = Math.max(0, spinsLeft - 1);
-    localStorage.setItem('spinsLeft', spinsLeft.toString());
-    spinsCountEl.textContent = spinsLeft;
-    
-    // Update total spins
-    totalSpins++;
-    localStorage.setItem('totalSpins', totalSpins.toString());
-    totalSpinsEl.textContent = totalSpins;
-    
-    // Update diamonds
-    updateDiamonds();
-    
-    if (spinsLeft === 0) {
-        spinBtn.disabled = true;
-        spinBtn.textContent = 'COME BACK TOMORROW';
-    }
-}
-
+// Update diamonds based on spin result
 function updateDiamonds() {
-    diamonds.forEach((d, i) => {
-        if (i < spinsLeft) {
-            d.classList.add('active');
-        } else {
-            d.classList.remove('active');
-        }
-    });
+    diamonds.forEach(d => d.classList.remove('active'));
+    const activeDiamond = Math.floor(Math.random() * diamonds.length);
+    diamonds[activeDiamond].classList.add('active');
 }
+
 
 // Draw wheel
 function drawWheel(rotation = 0) {
@@ -279,11 +242,13 @@ function createConfetti() {
 
 // Spin the wheel
 function spinWheel() {
-    if (isSpinning || spinsLeft <= 0) return;
-    
+    if (isSpinning) return;
+
     isSpinning = true;
-    spinBtn.disabled = true;
     wheelWrapper.classList.add('spinning');
+
+    // Add sparkle effect
+    createSparkles();
     
     // Random target angle
     const spins = 4 + Math.random() * 3;
@@ -328,7 +293,12 @@ function spinWheel() {
 function finishSpin() {
     isSpinning = false;
     wheelWrapper.classList.remove('spinning');
-    
+
+    // Update total spins
+    totalSpins++;
+    localStorage.setItem('totalSpins', totalSpins.toString());
+    totalSpinsEl.textContent = totalSpins;
+
     // Find winning segment
     const segmentAngle = (2 * Math.PI) / segments.length;
     
@@ -371,13 +341,9 @@ function finishSpin() {
     }
     
     resultPopup.classList.remove('hidden');
-    
-    // Update spins
-    updateSpinsLeft();
-    
-    if (spinsLeft > 0) {
-        spinBtn.disabled = false;
-    }
+
+    // Update diamonds animation
+    updateDiamonds();
 }
 
 
@@ -420,9 +386,39 @@ function createFavicon() {
     document.getElementById('favicon').href = faviconCanvas.toDataURL('image/png');
 }
 
+// Sparkle effect when spinning
+function createSparkles() {
+    for (let i = 0; i < 12; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.style.position = 'fixed';
+        sparkle.style.width = '6px';
+        sparkle.style.height = '6px';
+        sparkle.style.borderRadius = '50%';
+        sparkle.style.background = ['#e9d5ff', '#c084fc', '#a855f7'][Math.floor(Math.random() * 3)];
+        sparkle.style.pointerEvents = 'none';
+        sparkle.style.zIndex = '200';
+
+        const rect = wheelWrapper.getBoundingClientRect();
+        const angle = (i / 12) * Math.PI * 2;
+        const radius = 170;
+        sparkle.style.left = (rect.left + rect.width / 2 + Math.cos(angle) * radius) + 'px';
+        sparkle.style.top = (rect.top + rect.height / 2 + Math.sin(angle) * radius) + 'px';
+
+        document.body.appendChild(sparkle);
+
+        sparkle.animate([
+            { transform: 'scale(0) translateY(0)', opacity: 1 },
+            { transform: `scale(1) translateY(-30px)`, opacity: 0 }
+        ], {
+            duration: 800,
+            easing: 'ease-out'
+        }).onfinish = () => sparkle.remove();
+    }
+}
+
 // Event Listeners
-spinBtn.addEventListener('click', spinWheel);
-spinBtn.addEventListener('touchstart', (e) => {
+wheelWrapper.addEventListener('click', spinWheel);
+wheelWrapper.addEventListener('touchstart', (e) => {
     e.preventDefault();
     spinWheel();
 }, { passive: false });
@@ -534,13 +530,7 @@ adClose.addEventListener('click', (e) => {
 
 // Initialize
 createFavicon();
-spinsCountEl.textContent = spinsLeft;
 totalSpinsEl.textContent = totalSpins;
 updateDiamonds();
-
-if (spinsLeft === 0) {
-    spinBtn.disabled = true;
-    spinBtn.textContent = 'COME BACK TOMORROW';
-}
 
 drawWheel();

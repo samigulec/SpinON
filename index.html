@@ -24,12 +24,15 @@
             <div class="wheel-wrapper" id="wheelWrapper">
                 <div class="wheel-container">
                     <div class="wheel-pointer"></div>
-                    <canvas id="wheelCanvas" width="280" height="280"></canvas>
+                    <canvas id="wheelCanvas" width="340" height="340"></canvas>
                     <div class="wheel-center">
                         <span class="wheel-center-icon">🎰</span>
                     </div>
                 </div>
             </div>
+
+            <!-- Tap Hint -->
+            <div class="tap-hint">Tap to spin</div>
 
             <!-- Decorative Diamonds -->
             <div class="diamonds-row">
@@ -44,26 +47,16 @@
         <!-- Main Card -->
         <div class="main-card">
             <h2 class="card-title">LUCKY SPIN</h2>
-            
+
             <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">Spins Left</div>
-                    <div class="stat-value">
-                        <span id="spinsCount">5</span>
-                        <span class="icon">🎫</span>
-                    </div>
-                </div>
                 <div class="stat-box">
                     <div class="stat-label">Total Spins</div>
                     <div class="stat-value">
                         <span id="totalSpins">0</span>
+                        <span class="icon">🎯</span>
                     </div>
                 </div>
             </div>
-
-            <button id="spinBtn" class="spin-btn">
-                SPIN NOW
-            </button>
         </div>
 
         <!-- Ad Banner -->
