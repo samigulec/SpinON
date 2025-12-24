@@ -471,6 +471,12 @@ const panoAds = [
         title: 'Get your unique Web3 domain name!',
         cta: 'Get Yours',
         link: 'https://farcaster.xyz/miniapps/v7M5NCzIgbDZ/infinityname'
+    },
+   {
+        image: 'superboard.png',
+        title: 'Meet the new OnChainGM ✨',
+        cta: 'Join Now',
+        link: 'https://superboard.xyz/campaigns/meet-the-new-onchaingm
     }
 ];
 
