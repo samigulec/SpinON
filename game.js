@@ -17,34 +17,36 @@ const images = {};
 let imagesLoaded = 0;
 let allImagesLoaded = false;
 
-defaultSegments.forEach(segment => {
-    if (segment.img) {
-        const img = new Image();
-        img.onload = () => {
-            imagesLoaded++;
-            if (imagesLoaded === defaultSegments.filter(s => s.img).length) {
-                allImagesLoaded = true;
-                drawWheel();
-            }
-        };
-        img.onerror = () => {
-            imagesLoaded++;
-            if (imagesLoaded === defaultSegments.filter(s => s.img).length) {
-                allImagesLoaded = true;
-                drawWheel();
-            }
-        };
-        img.src = segment.img;
-        images[segment.img] = img;
-    }
-});
+function preloadImages() {
+    defaultSegments.forEach(segment => {
+        if (segment.img) {
+            const img = new Image();
+            img.onload = () => {
+                imagesLoaded++;
+                checkAllImagesLoaded();
+            };
+            img.onerror = () => {
+                imagesLoaded++;
+                checkAllImagesLoaded();
+            };
+            img.src = segment.img;
+            images[segment.img] = img;
+        }
+    });
+}
 
-// Draw wheel after 500ms even if images haven't loaded
-setTimeout(() => {
-    if (!allImagesLoaded) {
-        drawWheel();
+function checkAllImagesLoaded() {
+    if (imagesLoaded === defaultSegments.filter(s => s.img).length) {
+        allImagesLoaded = true;
+        if (ctx) {
+            drawWheel();
+        }
     }
-}, 500);
+}
+
+preloadImages();
+
+// Note: drawWheel will be called from init() after DOM is ready
 
 // State - Always use default segments (no customization)
 let segments = defaultSegments;
@@ -139,11 +141,24 @@ function drawWheel(rotation = 0) {
         const iconY = centerY + Math.sin(midAngle) * radius * 0.6;
         const iconSize = 36;
         
-        if (segment.img && images[segment.img]) {
+        const img = segment.img ? images[segment.img] : null;
+        const isImageValid = img && img.complete && img.naturalWidth > 0;
+
+        if (isImageValid) {
             ctx.save();
             ctx.translate(iconX, iconY);
             ctx.rotate(midAngle + Math.PI / 2);
-            ctx.drawImage(images[segment.img], -iconSize/2, -iconSize/2, iconSize, iconSize);
+            ctx.drawImage(img, -iconSize/2, -iconSize/2, iconSize, iconSize);
+            ctx.restore();
+        } else if (segment.img) {
+            ctx.save();
+            ctx.translate(iconX, iconY);
+            ctx.font = 'bold 14px SF Pro Display, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.rotate(midAngle + Math.PI / 2);
+            ctx.fillText(segment.name.substring(0, 3).toUpperCase(), 0, 0);
             ctx.restore();
         } else if (!segment.img) {
             // Draw X for Nothing
@@ -571,7 +586,15 @@ function init() {
     totalSpinsEl.textContent = totalSpins;
 
     // Setup event listeners
-    wheelWrapper.addEventListener('click', spinWheel);
+    wheelWrapper.addEventListener('click', (e) => {
+        e.preventDefault();
+        spinWheel();
+    });
+    wheelWrapper.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        spinWheel();
+    }, { passive: false });
+
     closePopup.addEventListener('click', () => {
         resultPopup.classList.add('hidden');
     });
@@ -586,8 +609,13 @@ function init() {
         vibrate([30]);
     });
 
-    // Draw wheel
+    // Draw wheel immediately
     drawWheel();
+
+    // Redraw when images finish loading
+    setTimeout(() => {
+        drawWheel();
+    }, 1000);
 
     // Initialize ads
     initializeAds();
