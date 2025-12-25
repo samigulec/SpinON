@@ -112,13 +112,13 @@ function updateWalletDisplay() {
 initFarcaster();
 
 // Wheel segments - 5 segments: 3 USDC values, 2 X (loss)
-// Premium color palette: Teal/Gold for wins, Dark for losses
+// Strict Blue and Black color palette (Base Blue: #0052FF)
 const defaultSegments = [
-    { name: '0.01 USDC', value: 0.01, color: '#0d9488', gradient: '#2dd4bf', isLoss: false },
-    { name: 'X', value: 0, color: '#1a1a2e', gradient: '#16213e', isLoss: true },
-    { name: '0.001 USDC', value: 0.001, color: '#7c3aed', gradient: '#a78bfa', isLoss: false },
-    { name: 'X', value: 0, color: '#1a1a2e', gradient: '#16213e', isLoss: true },
-    { name: '0.02 USDC', value: 0.02, color: '#d97706', gradient: '#fbbf24', isLoss: false }
+    { name: '0.01 USDC', value: 0.01, color: '#0052FF', gradient: '#3b82f6', isLoss: false },
+    { name: 'X', value: 0, color: '#0a0a0a', gradient: '#1a1a1a', isLoss: true },
+    { name: '0.001 USDC', value: 0.001, color: '#0066FF', gradient: '#60a5fa', isLoss: false },
+    { name: 'X', value: 0, color: '#0a0a0a', gradient: '#1a1a1a', isLoss: true },
+    { name: '0.02 USDC', value: 0.02, color: '#0041cc', gradient: '#2563eb', isLoss: false }
 ];
 
 // State
