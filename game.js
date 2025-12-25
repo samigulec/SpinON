@@ -125,6 +125,7 @@ const defaultSegments = [
 let segments = defaultSegments;
 let totalSpins = parseInt(localStorage.getItem('totalSpins')) || 0;
 let totalWinnings = parseFloat(localStorage.getItem('totalWinnings')) || 0;
+let totalWins = parseInt(localStorage.getItem('totalWins')) || 0;
 let isSpinning = false;
 let currentRotation = 0;
 let soundEnabled = true;
@@ -499,7 +500,9 @@ function finishSpin() {
         popupTitle.textContent = 'No luck!';
         resultText.innerHTML = `Better luck next time!`;
     } else {
-        // Add winnings
+        totalWins++;
+        localStorage.setItem('totalWins', totalWins.toString());
+
         totalWinnings += winner.value;
         localStorage.setItem('totalWinnings', totalWinnings.toString());
         updateWinningsDisplay();
@@ -669,6 +672,77 @@ function initializePano() {
     panoRotationInterval = setInterval(rotatePano, 8000);
 }
 
+// Profile Modal
+let profileModal, profileClose, profileOverlay, profileBtn;
+
+function initializeProfile() {
+    profileModal = document.getElementById('profileModal');
+    profileClose = document.getElementById('profileClose');
+    profileOverlay = document.querySelector('.profile-overlay');
+    profileBtn = document.getElementById('profileBtn');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+
+    if (!profileModal || !profileClose || !profileBtn) return;
+
+    profileBtn.addEventListener('click', () => {
+        openProfile();
+    });
+
+    profileClose.addEventListener('click', () => {
+        closeProfile();
+    });
+
+    profileOverlay.addEventListener('click', () => {
+        closeProfile();
+    });
+
+    if (withdrawBtn) {
+        withdrawBtn.addEventListener('click', () => {
+            alert('Withdraw functionality coming soon!');
+        });
+    }
+}
+
+function openProfile() {
+    updateProfileData();
+    profileModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProfile() {
+    profileModal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function updateProfileData() {
+    const profilePfp = document.getElementById('profilePfp');
+    const profileName = document.getElementById('profileName');
+    const profileHandle = document.getElementById('profileHandle');
+    const profileTotalSpins = document.getElementById('profileTotalSpins');
+    const profileTotalRewards = document.getElementById('profileTotalRewards');
+    const profileWinRate = document.getElementById('profileWinRate');
+    const profileUsdcBalance = document.getElementById('profileUsdcBalance');
+
+    if (farcasterUser) {
+        if (farcasterUser.pfpUrl) {
+            profilePfp.src = farcasterUser.pfpUrl;
+        }
+        profileName.textContent = farcasterUser.displayName || farcasterUser.username || 'Spinner';
+        profileHandle.textContent = farcasterUser.username ? `@${farcasterUser.username}` : '@user';
+    } else {
+        profileName.textContent = 'Spinner';
+        profileHandle.textContent = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : '@user';
+    }
+
+    profileTotalSpins.textContent = totalSpins;
+    profileTotalRewards.textContent = totalWinnings.toFixed(3);
+
+    const winRate = totalSpins > 0 ? Math.round((totalWins / totalSpins) * 100) : 0;
+    profileWinRate.textContent = `${winRate}%`;
+
+    profileUsdcBalance.textContent = `${totalWinnings.toFixed(3)} USDC`;
+}
+
 // Initialize
 function init() {
     if (!initializeDOM()) {
@@ -710,6 +784,9 @@ function init() {
 
     // Initialize pano
     initializePano();
+
+    // Initialize profile
+    initializeProfile();
 }
 
 // Start initialization when DOM is ready
