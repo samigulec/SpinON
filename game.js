@@ -574,13 +574,13 @@ const panoAds = [
         image: 'onchaingm.png',
         title: 'Your Daily Web3 Ritual. GM every day!',
         cta: 'Say GM',
-        link: 'https://app.onchaingm.com',
+        link: 'https://farcaster.xyz/miniapps/WJydZUDypPkb/onchaingm',
     },
    {
         image: 'infinityname.jpg',
         title: 'Get your unique Web3 domain name!',
         cta: 'Get Yours',
-        link: 'https://infinityname.com'
+        link: 'https://farcaster.xyz/miniapps/v7M5NCzIgbDZ/infinityname'
     },
   {
         image: 'superboard.png',
