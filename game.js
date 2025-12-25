@@ -574,13 +574,13 @@ const panoAds = [
         image: 'onchaingm.png',
         title: 'Your Daily Web3 Ritual. GM every day!',
         cta: 'Say GM',
-        link: 'https://farcaster.xyz/miniapps/WJydZUDypPkb/onchaingm',
+        link: 'https://app.onchaingm.com',
     },
    {
         image: 'infinityname.jpg',
         title: 'Get your unique Web3 domain name!',
         cta: 'Get Yours',
-        link: 'https://farcaster.xyz/miniapps/v7M5NCzIgbDZ/infinityname'
+        link: 'https://infinityname.com'
     },
   {
         image: 'superboard.png',
@@ -653,6 +653,15 @@ function initializePano() {
             clearInterval(panoRotationInterval);
             panoRotationInterval = setInterval(rotatePano, 8000);
         });
+    });
+
+    panoLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = e.currentTarget.href;
+        if (url && url !== '#') {
+            await openExternalApp(url);
+        }
     });
 
     panoClose.addEventListener('click', (e) => {
