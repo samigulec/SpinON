@@ -1,69 +1,63 @@
 import { sdk } from 'https://esm.sh/@farcaster/frame-sdk';
 
-// Farcaster SDK başlat
-sdk.actions.ready();
+// Farcaster SDK
+let farcasterUser = null;
 
-// Default segments - Crypto theme with images
-const defaultSegments = [
-    { name: 'Bitcoin', color: '#0052FF', gradient: '#4285F4', img: 'cbbtc.png' },
-    { name: 'Ethereum', color: '#0066FF', gradient: '#A8C7FA', img: 'cbeth.png' },
-    { name: 'USDC', color: '#001845', gradient: '#0066FF', img: 'usdc.png' },
-    { name: 'Toshi', color: '#0052FF', gradient: '#4285F4', img: 'toshi.png' },
-    { name: 'Nothing', color: '#001233', gradient: '#0052FF', img: null }
-];
-
-// Preload images
-const images = {};
-let imagesLoaded = 0;
-let allImagesLoaded = false;
-
-function preloadImages() {
-    defaultSegments.forEach(segment => {
-        if (segment.img) {
-            const img = new Image();
-            img.onload = () => {
-                imagesLoaded++;
-                checkAllImagesLoaded();
-            };
-            img.onerror = () => {
-                imagesLoaded++;
-                checkAllImagesLoaded();
-            };
-            img.src = segment.img;
-            images[segment.img] = img;
+async function initFarcaster() {
+    try {
+        const context = await sdk.context;
+        if (context?.user) {
+            farcasterUser = context.user;
+            updateWalletDisplay();
         }
-    });
-}
-
-function checkAllImagesLoaded() {
-    if (imagesLoaded === defaultSegments.filter(s => s.img).length) {
-        allImagesLoaded = true;
-        if (ctx) {
-            drawWheel();
-        }
+        sdk.actions.ready();
+    } catch (e) {
+        console.log('Farcaster context not available');
+        sdk.actions.ready();
     }
 }
 
-preloadImages();
+function updateWalletDisplay() {
+    const walletEl = document.getElementById('walletAddress');
+    if (!walletEl) return;
 
-// Note: drawWheel will be called from init() after DOM is ready
+    if (farcasterUser?.custody_address) {
+        const addr = farcasterUser.custody_address;
+        walletEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    } else if (farcasterUser?.username) {
+        walletEl.textContent = `@${farcasterUser.username}`;
+    } else {
+        walletEl.textContent = 'Connected';
+    }
+}
 
-// State - Always use default segments (no customization)
+initFarcaster();
+
+// Wheel segments - 5 segments: 3 USDC values, 2 X (loss)
+const defaultSegments = [
+    { name: '0.01 USDC', value: 0.01, color: '#0052FF', gradient: '#4285F4', isLoss: false },
+    { name: 'X', value: 0, color: '#001233', gradient: '#0a1628', isLoss: true },
+    { name: '0.001 USDC', value: 0.001, color: '#0066FF', gradient: '#A8C7FA', isLoss: false },
+    { name: 'X', value: 0, color: '#001233', gradient: '#0a1628', isLoss: true },
+    { name: '0.02 USDC', value: 0.02, color: '#001845', gradient: '#0066FF', isLoss: false }
+];
+
+// State
 let segments = defaultSegments;
 let totalSpins = parseInt(localStorage.getItem('totalSpins')) || 0;
+let totalWinnings = parseFloat(localStorage.getItem('totalWinnings')) || 0;
 let isSpinning = false;
 let currentRotation = 0;
 let soundEnabled = true;
-let winStreak = 0;
-let lossStreak = 0;
 
 // DOM Elements - wait for DOM to be ready
-let canvas, ctx, totalSpinsEl, resultPopup, resultText, closePopup, wheelWrapper, soundBtn;
+let canvas, ctx, totalSpinsEl, totalWinningsEl, resultPopup, resultText, closePopup, wheelWrapper, soundBtn;
 
 function initializeDOM() {
     canvas = document.getElementById('wheelCanvas');
     ctx = canvas?.getContext('2d');
     totalSpinsEl = document.getElementById('totalSpins');
+    totalWinningsEl = document.getElementById('totalWinnings');
     resultPopup = document.getElementById('resultPopup');
     resultText = document.getElementById('resultText');
     closePopup = document.getElementById('closePopup');
@@ -77,19 +71,19 @@ function initializeDOM() {
     return true;
 }
 
-// Base logo animation
-const baseLogoBox = document.querySelector('.base-logo-box');
+function updateWinningsDisplay() {
+    if (totalWinningsEl) {
+        totalWinningsEl.textContent = `${totalWinnings.toFixed(3)} USDC`;
+    }
+}
 
-function animateBaseLogo() {
-    if (!baseLogoBox) return;
-    baseLogoBox.style.transform = 'scale(1.2)';
-    baseLogoBox.style.borderColor = '#4285F4';
-    baseLogoBox.style.boxShadow = '0 0 30px rgba(66, 133, 244, 0.8)';
-    setTimeout(() => {
-        baseLogoBox.style.transform = '';
-        baseLogoBox.style.borderColor = '';
-        baseLogoBox.style.boxShadow = '';
-    }, 500);
+function animateBaseDecorations() {
+    const boxes = document.querySelectorAll('.base-deco-box');
+    boxes.forEach((box, i) => {
+        box.style.animation = 'none';
+        box.offsetHeight;
+        box.style.animation = `decoGlow 0.6s ease ${i * 0.1}s`;
+    });
 }
 
 
@@ -99,20 +93,20 @@ function drawWheel(rotation = 0) {
     const centerY = canvas.height / 2;
     const radius = Math.min(centerX, centerY) - 12;
     const segmentAngle = (2 * Math.PI) / segments.length;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(rotation);
     ctx.translate(-centerX, -centerY);
-    
+
     // Draw segments
     segments.forEach((segment, i) => {
         const startAngle = i * segmentAngle - Math.PI / 2;
         const endAngle = startAngle + segmentAngle;
         const midAngle = startAngle + segmentAngle / 2;
-        
+
         // Create gradient for segment
         const gradient = ctx.createLinearGradient(
             centerX + Math.cos(midAngle) * radius,
@@ -122,7 +116,7 @@ function drawWheel(rotation = 0) {
         );
         gradient.addColorStop(0, segment.color);
         gradient.addColorStop(1, segment.gradient);
-        
+
         // Segment
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
@@ -130,53 +124,50 @@ function drawWheel(rotation = 0) {
         ctx.closePath();
         ctx.fillStyle = gradient;
         ctx.fill();
-        
+
         // Segment border
         ctx.strokeStyle = 'rgba(168, 199, 250, 0.4)';
         ctx.lineWidth = 2;
         ctx.stroke();
-        
-        // Draw image or X
+
+        // Draw content
         const iconX = centerX + Math.cos(midAngle) * radius * 0.6;
         const iconY = centerY + Math.sin(midAngle) * radius * 0.6;
-        const iconSize = 36;
-        
-        const img = segment.img ? images[segment.img] : null;
-        const isImageValid = img && img.complete && img.naturalWidth > 0;
 
-        if (isImageValid) {
+        if (segment.isLoss) {
+            // Draw large X for loss
+            ctx.save();
+            ctx.translate(iconX, iconY);
+            ctx.strokeStyle = '#ff4757';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(-16, -16);
+            ctx.lineTo(16, 16);
+            ctx.moveTo(16, -16);
+            ctx.lineTo(-16, 16);
+            ctx.stroke();
+            ctx.restore();
+        } else {
+            // Draw USDC value text
             ctx.save();
             ctx.translate(iconX, iconY);
             ctx.rotate(midAngle + Math.PI / 2);
-            ctx.drawImage(img, -iconSize/2, -iconSize/2, iconSize, iconSize);
-            ctx.restore();
-        } else if (segment.img) {
-            ctx.save();
-            ctx.translate(iconX, iconY);
-            ctx.font = 'bold 14px SF Pro Display, sans-serif';
+
+            // Value text
+            ctx.font = 'bold 13px SF Pro Display, -apple-system, sans-serif';
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.rotate(midAngle + Math.PI / 2);
-            ctx.fillText(segment.name.substring(0, 3).toUpperCase(), 0, 0);
-            ctx.restore();
-        } else if (!segment.img) {
-            // Draw X for Nothing
-            ctx.save();
-            ctx.translate(iconX, iconY);
-            ctx.strokeStyle = '#A8C7FA';
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(-10, -10);
-            ctx.lineTo(10, 10);
-            ctx.moveTo(10, -10);
-            ctx.lineTo(-10, 10);
-            ctx.stroke();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 4;
+            ctx.fillText(segment.name, 0, 0);
             ctx.restore();
         }
     });
-    
+
     // Outer metallic ring
     const ringGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     ringGradient.addColorStop(0, '#4285F4');
@@ -184,27 +175,27 @@ function drawWheel(rotation = 0) {
     ringGradient.addColorStop(0.5, '#0066FF');
     ringGradient.addColorStop(0.7, '#A8C7FA');
     ringGradient.addColorStop(1, '#4285F4');
-    
+
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 8, 0, 2 * Math.PI);
     ctx.strokeStyle = ringGradient;
     ctx.lineWidth = 12;
     ctx.stroke();
-    
+
     // Ring highlight
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 13, 0, 2 * Math.PI);
     ctx.strokeStyle = 'rgba(168, 199, 250, 0.5)';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Ring inner edge
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 2, 0, 2 * Math.PI);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     ctx.stroke();
-    
+
     ctx.restore();
 }
 
@@ -366,49 +357,46 @@ function finishSpin() {
 
     // Find winning segment
     const segmentAngle = (2 * Math.PI) / segments.length;
-    
+
     // Normalize rotation to 0-2π range
     let normalizedRotation = currentRotation % (2 * Math.PI);
     if (normalizedRotation < 0) normalizedRotation += 2 * Math.PI;
-    
-    // The pointer is at the top (12 o'clock position)
-    // Segments are drawn starting from -π/2 (top) going clockwise
-    // When wheel rotates, we need to find which segment is at the top
-    
+
     // Calculate the angle at the pointer position
-    // The wheel rotates clockwise, so we subtract the rotation
     let pointerAngle = (2 * Math.PI - normalizedRotation) % (2 * Math.PI);
-    
+
     // Find which segment this angle falls into
     const winningIndex = Math.floor(pointerAngle / segmentAngle) % segments.length;
     const winner = segments[winningIndex];
-    
+
     // Effects
     vibrate([100, 50, 100, 50, 100]);
-    playWinSound();
     createConfetti();
-    
-    // Show result
-    const isLoss = winner.img === null || winner.name === 'Nothing';
-    
+
     // Update popup based on result
     const popupEmoji = document.querySelector('.popup-emoji');
     const popupTitle = document.querySelector('.popup-content h2');
-    
-    if (isLoss) {
-        popupEmoji.textContent = '🍀';
-        popupTitle.textContent = 'Unfortunately!';
+
+    if (winner.isLoss) {
+        popupEmoji.textContent = '😢';
+        popupTitle.textContent = 'No luck!';
         resultText.innerHTML = `Better luck next time!`;
     } else {
+        // Add winnings
+        totalWinnings += winner.value;
+        localStorage.setItem('totalWinnings', totalWinnings.toString());
+        updateWinningsDisplay();
+
+        playWinSound();
         popupEmoji.textContent = '🎉';
-        popupTitle.textContent = 'Congratulations!';
-        resultText.innerHTML = `You won: <strong>${winner.name}</strong>`;
+        popupTitle.textContent = 'You Won!';
+        resultText.innerHTML = `<strong>${winner.name}</strong>`;
     }
-    
+
     resultPopup.classList.remove('hidden');
 
-    // Animate base logo
-    animateBaseLogo();
+    // Animate decorative boxes
+    animateBaseDecorations();
 }
 
 
@@ -417,37 +405,37 @@ function createFavicon() {
     const faviconCanvas = document.createElement('canvas');
     faviconCanvas.width = 32;
     faviconCanvas.height = 32;
-    const ctx = faviconCanvas.getContext('2d');
-    
+    const fctx = faviconCanvas.getContext('2d');
+
     const center = 16;
     const radius = 14;
     const segmentAngle = (2 * Math.PI) / segments.length;
-    
+
     segments.forEach((segment, i) => {
         const startAngle = i * segmentAngle - Math.PI / 2;
         const endAngle = startAngle + segmentAngle;
-        
-        ctx.beginPath();
-        ctx.moveTo(center, center);
-        ctx.arc(center, center, radius, startAngle, endAngle);
-        ctx.closePath();
-        ctx.fillStyle = segment.color;
-        ctx.fill();
-    });
-    
-    ctx.beginPath();
-    ctx.arc(center, center, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = '#001233';
-    ctx.fill();
 
-    ctx.fillStyle = '#4285F4';
-    ctx.beginPath();
-    ctx.moveTo(center, 0);
-    ctx.lineTo(center - 4, 6);
-    ctx.lineTo(center + 4, 6);
-    ctx.closePath();
-    ctx.fill();
-    
+        fctx.beginPath();
+        fctx.moveTo(center, center);
+        fctx.arc(center, center, radius, startAngle, endAngle);
+        fctx.closePath();
+        fctx.fillStyle = segment.color;
+        fctx.fill();
+    });
+
+    fctx.beginPath();
+    fctx.arc(center, center, 3, 0, 2 * Math.PI);
+    fctx.fillStyle = '#001233';
+    fctx.fill();
+
+    fctx.fillStyle = '#4285F4';
+    fctx.beginPath();
+    fctx.moveTo(center, 0);
+    fctx.lineTo(center - 4, 6);
+    fctx.lineTo(center + 4, 6);
+    fctx.closePath();
+    fctx.fill();
+
     document.getElementById('favicon').href = faviconCanvas.toDataURL('image/png');
 }
 
@@ -607,6 +595,8 @@ function init() {
 
     createFavicon();
     totalSpinsEl.textContent = totalSpins;
+    updateWinningsDisplay();
+    updateWalletDisplay();
 
     // Setup event listeners
     wheelWrapper.addEventListener('click', (e) => {
@@ -634,11 +624,6 @@ function init() {
 
     // Draw wheel immediately
     drawWheel();
-
-    // Redraw when images finish loading
-    setTimeout(() => {
-        drawWheel();
-    }, 1000);
 
     // Initialize pano
     initializePano();

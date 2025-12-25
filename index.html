@@ -19,16 +19,21 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Base Logo - Top Left -->
-        <a href="https://base.org" target="_blank" rel="noopener" class="base-logo-box" id="baseLogoLink">
-            <img src="base_logo.png" alt="Base" width="28" height="28" style="border-radius: 6px;">
-        </a>
-
-        <!-- Stats Box - Top Right -->
-        <div class="stats-box">
-            <span class="stats-label">Spins</span>
-            <span class="stats-value" id="totalSpins">0</span>
-        </div>
+        <!-- Header Stats -->
+        <header class="header-stats">
+            <div class="stat-card">
+                <span class="stat-label">Total Spins</span>
+                <span class="stat-value" id="totalSpins">0</span>
+            </div>
+            <div class="stat-card wallet-card">
+                <span class="stat-label">Wallet</span>
+                <span class="stat-value wallet-address" id="walletAddress">Connect...</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Winnings</span>
+                <span class="stat-value winnings-value" id="totalWinnings">0.00 USDC</span>
+            </div>
+        </header>
 
         <!-- Wheel Area -->
         <div class="wheel-area">
@@ -39,6 +44,22 @@
                     <div class="wheel-center">
                         <span class="wheel-center-icon">🎰</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Decorative Base Logos -->
+            <div class="base-decorations">
+                <div class="base-deco-box">
+                    <img src="base_logo.png" alt="Base" class="base-deco-img">
+                </div>
+                <div class="base-deco-box">
+                    <img src="base_logo.png" alt="Base" class="base-deco-img">
+                </div>
+                <div class="base-deco-box">
+                    <img src="base_logo.png" alt="Base" class="base-deco-img">
+                </div>
+                <div class="base-deco-box">
+                    <img src="base_logo.png" alt="Base" class="base-deco-img">
                 </div>
             </div>
 
