@@ -271,76 +271,125 @@ body {
     color: #4ade80;
 }
 
-/* Decorative Base Logos */
-.base-decorations {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 10px;
-    margin-bottom: 8px;
+/* Wrong Network State */
+.stat-card.wallet-card.wrong-network {
+    background: linear-gradient(145deg, rgba(180, 83, 9, 0.4) 0%, rgba(146, 64, 14, 0.5) 100%);
+    border-color: rgba(251, 191, 36, 0.5);
+    cursor: pointer;
+    animation: pulseWarning 2s ease-in-out infinite;
 }
 
-.base-deco-box {
-    width: 44px;
-    height: 44px;
+.stat-card.wallet-card.wrong-network .stat-label {
+    color: #fbbf24;
+}
+
+.stat-card.wallet-card.wrong-network .wallet-address {
+    color: #fcd34d;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.65rem;
+}
+
+@keyframes pulseWarning {
+    0%, 100% {
+        box-shadow:
+            0 4px 20px rgba(251, 191, 36, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    50% {
+        box-shadow:
+            0 4px 24px rgba(251, 191, 36, 0.4),
+            0 0 20px rgba(251, 191, 36, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Decorative Geometric Shapes */
+.deco-shapes {
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: center;
-    background: linear-gradient(145deg, rgba(20, 45, 90, 0.7) 0%, rgba(10, 25, 55, 0.8) 100%);
-    border: 1.5px solid rgba(100, 150, 220, 0.3);
-    border-radius: 12px;
-    animation: floatDeco 3s ease-in-out infinite;
+    gap: 24px;
+    margin-top: 20px;
+    margin-bottom: 16px;
+}
+
+.deco-shape {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(168, 199, 250, 0.35);
+    border-radius: 8px;
+    background: transparent;
+    position: relative;
+    animation: floatShape 3.5s ease-in-out infinite;
     pointer-events: none;
-    box-shadow:
-        0 4px 16px rgba(0, 40, 100, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.base-deco-box:nth-child(1) { animation-delay: 0s; }
-.base-deco-box:nth-child(2) { animation-delay: 0.3s; }
-.base-deco-box:nth-child(3) { animation-delay: 0.6s; }
-.base-deco-box:nth-child(4) { animation-delay: 0.9s; }
-
-.base-deco-img {
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    filter: drop-shadow(0 2px 6px rgba(66, 133, 244, 0.4));
+.deco-shape::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(168, 199, 250, 0.2);
+    border-radius: 4px;
 }
 
-@keyframes floatDeco {
+.deco-shape:nth-child(1) {
+    animation-delay: 0s;
+    border-color: rgba(45, 212, 191, 0.5);
+}
+.deco-shape:nth-child(1)::before {
+    border-color: rgba(45, 212, 191, 0.25);
+}
+
+.deco-shape:nth-child(2) {
+    animation-delay: 0.5s;
+    border-color: rgba(167, 139, 250, 0.5);
+}
+.deco-shape:nth-child(2)::before {
+    border-color: rgba(167, 139, 250, 0.25);
+}
+
+.deco-shape:nth-child(3) {
+    animation-delay: 1s;
+    border-color: rgba(251, 191, 36, 0.5);
+}
+.deco-shape:nth-child(3)::before {
+    border-color: rgba(251, 191, 36, 0.25);
+}
+
+.deco-shape:nth-child(4) {
+    animation-delay: 1.5s;
+    border-color: rgba(168, 199, 250, 0.5);
+}
+.deco-shape:nth-child(4)::before {
+    border-color: rgba(168, 199, 250, 0.25);
+}
+
+@keyframes floatShape {
     0%, 100% {
         transform: translateY(0);
-        box-shadow:
-            0 4px 16px rgba(0, 40, 100, 0.3),
-            0 0 12px rgba(66, 133, 244, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        opacity: 0.6;
+        box-shadow: 0 0 8px rgba(168, 199, 250, 0.1);
     }
     50% {
         transform: translateY(-6px);
+        opacity: 1;
         box-shadow:
-            0 8px 24px rgba(0, 40, 100, 0.4),
-            0 0 20px rgba(66, 133, 244, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            0 6px 16px rgba(168, 199, 250, 0.15),
+            0 0 20px rgba(168, 199, 250, 0.1);
     }
 }
 
 @keyframes decoGlow {
-    0% {
-        box-shadow:
-            0 4px 16px rgba(0, 40, 100, 0.3),
-            0 0 12px rgba(66, 133, 244, 0.2);
+    0%, 100% {
+        opacity: 0.6;
+        box-shadow: 0 0 8px rgba(168, 199, 250, 0.1);
     }
     50% {
+        opacity: 1;
         box-shadow:
-            0 4px 16px rgba(0, 40, 100, 0.5),
-            0 0 30px rgba(66, 133, 244, 0.8),
-            0 0 50px rgba(168, 199, 250, 0.4);
-    }
-    100% {
-        box-shadow:
-            0 4px 16px rgba(0, 40, 100, 0.3),
-            0 0 12px rgba(66, 133, 244, 0.2);
+            0 0 24px rgba(168, 199, 250, 0.4),
+            0 0 40px rgba(66, 133, 244, 0.2);
     }
 }
 
@@ -930,20 +979,15 @@ body {
         font-size: 1.8rem;
     }
 
-    .base-decorations {
-        gap: 12px;
-        margin-top: 5px;
-        margin-bottom: 5px;
+    .deco-shapes {
+        gap: 16px;
+        margin-top: 12px;
+        margin-bottom: 10px;
     }
 
-    .base-deco-box {
-        width: 38px;
-        height: 38px;
-    }
-
-    .base-deco-img {
-        width: 22px;
-        height: 22px;
+    .deco-shape {
+        width: 28px;
+        height: 28px;
     }
 
     .tap-hint {
@@ -988,20 +1032,15 @@ body {
         font-size: 1.5rem;
     }
 
-    .base-decorations {
-        gap: 10px;
-        margin-top: 3px;
-        margin-bottom: 3px;
+    .deco-shapes {
+        gap: 14px;
+        margin-top: 8px;
+        margin-bottom: 6px;
     }
 
-    .base-deco-box {
-        width: 32px;
-        height: 32px;
-    }
-
-    .base-deco-img {
-        width: 18px;
-        height: 18px;
+    .deco-shape {
+        width: 24px;
+        height: 24px;
     }
 
     .pano-banner {
@@ -1055,18 +1094,13 @@ body {
         font-size: 0.65rem;
     }
 
-    .base-decorations {
-        gap: 12px;
+    .deco-shapes {
+        gap: 16px;
     }
 
-    .base-deco-box {
-        width: 38px;
-        height: 38px;
-    }
-
-    .base-deco-img {
-        width: 22px;
-        height: 22px;
+    .deco-shape {
+        width: 26px;
+        height: 26px;
     }
 
     .wheel-wrapper {
@@ -1126,6 +1160,17 @@ body {
 
     .wheel-center-icon {
         font-size: 1.4rem;
+    }
+
+    .deco-shapes {
+        gap: 12px;
+        margin-top: 8px;
+        margin-bottom: 6px;
+    }
+
+    .deco-shape {
+        width: 22px;
+        height: 22px;
     }
 
     .tap-hint {

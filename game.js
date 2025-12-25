@@ -1,45 +1,124 @@
 import { sdk } from 'https://esm.sh/@farcaster/frame-sdk';
 
+// Constants
+const BASE_CHAIN_ID = 8453;
+
 // Farcaster SDK
 let farcasterUser = null;
+let currentChainId = null;
+let walletAddress = null;
 
 async function initFarcaster() {
     try {
         const context = await sdk.context;
         if (context?.user) {
             farcasterUser = context.user;
-            updateWalletDisplay();
+            walletAddress = farcasterUser.custody_address || null;
         }
         sdk.actions.ready();
+        checkNetwork();
+        updateWalletDisplay();
     } catch (e) {
         console.log('Farcaster context not available');
         sdk.actions.ready();
+        updateWalletDisplay();
+    }
+}
+
+async function checkNetwork() {
+    try {
+        if (window.ethereum) {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            currentChainId = parseInt(chainId, 16);
+            updateNetworkStatus();
+
+            window.ethereum.on('chainChanged', (newChainId) => {
+                currentChainId = parseInt(newChainId, 16);
+                updateNetworkStatus();
+            });
+
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length > 0) {
+                    walletAddress = accounts[0];
+                    updateWalletDisplay();
+                }
+            });
+        }
+    } catch (e) {
+        console.log('Network check not available');
+    }
+}
+
+function updateNetworkStatus() {
+    const walletCard = document.querySelector('.wallet-card');
+    const walletEl = document.getElementById('walletAddress');
+    if (!walletCard || !walletEl) return;
+
+    const isCorrectNetwork = currentChainId === BASE_CHAIN_ID;
+
+    if (!isCorrectNetwork && currentChainId !== null) {
+        walletCard.classList.add('wrong-network');
+        walletEl.textContent = 'Switch Network';
+        walletCard.onclick = switchToBase;
+    } else {
+        walletCard.classList.remove('wrong-network');
+        walletCard.onclick = null;
+        updateWalletDisplay();
+    }
+}
+
+async function switchToBase() {
+    try {
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x2105' }],
+        });
+    } catch (switchError) {
+        if (switchError.code === 4902) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x2105',
+                        chainName: 'Base',
+                        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                        rpcUrls: ['https://mainnet.base.org'],
+                        blockExplorerUrls: ['https://basescan.org']
+                    }],
+                });
+            } catch (addError) {
+                console.error('Failed to add Base network');
+            }
+        }
     }
 }
 
 function updateWalletDisplay() {
     const walletEl = document.getElementById('walletAddress');
+    const walletCard = document.querySelector('.wallet-card');
     if (!walletEl) return;
 
-    if (farcasterUser?.custody_address) {
-        const addr = farcasterUser.custody_address;
-        walletEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    if (walletCard?.classList.contains('wrong-network')) return;
+
+    if (walletAddress) {
+        walletEl.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-3)}`;
     } else if (farcasterUser?.username) {
         walletEl.textContent = `@${farcasterUser.username}`;
     } else {
-        walletEl.textContent = 'Connected';
+        walletEl.textContent = '0x...';
     }
 }
 
 initFarcaster();
 
 // Wheel segments - 5 segments: 3 USDC values, 2 X (loss)
+// Premium color palette: Teal/Gold for wins, Dark for losses
 const defaultSegments = [
-    { name: '0.01 USDC', value: 0.01, color: '#0052FF', gradient: '#4285F4', isLoss: false },
-    { name: 'X', value: 0, color: '#001233', gradient: '#0a1628', isLoss: true },
-    { name: '0.001 USDC', value: 0.001, color: '#0066FF', gradient: '#A8C7FA', isLoss: false },
-    { name: 'X', value: 0, color: '#001233', gradient: '#0a1628', isLoss: true },
-    { name: '0.02 USDC', value: 0.02, color: '#001845', gradient: '#0066FF', isLoss: false }
+    { name: '0.01 USDC', value: 0.01, color: '#0d9488', gradient: '#2dd4bf', isLoss: false },
+    { name: 'X', value: 0, color: '#1a1a2e', gradient: '#16213e', isLoss: true },
+    { name: '0.001 USDC', value: 0.001, color: '#7c3aed', gradient: '#a78bfa', isLoss: false },
+    { name: 'X', value: 0, color: '#1a1a2e', gradient: '#16213e', isLoss: true },
+    { name: '0.02 USDC', value: 0.02, color: '#d97706', gradient: '#fbbf24', isLoss: false }
 ];
 
 // State
@@ -77,12 +156,12 @@ function updateWinningsDisplay() {
     }
 }
 
-function animateBaseDecorations() {
-    const boxes = document.querySelectorAll('.base-deco-box');
-    boxes.forEach((box, i) => {
-        box.style.animation = 'none';
-        box.offsetHeight;
-        box.style.animation = `decoGlow 0.6s ease ${i * 0.1}s`;
+function animateDecoShapes() {
+    const shapes = document.querySelectorAll('.deco-shape');
+    shapes.forEach((shape, i) => {
+        shape.style.animation = 'none';
+        shape.offsetHeight;
+        shape.style.animation = `decoGlow 0.6s ease ${i * 0.1}s, floatShape 3.5s ease-in-out infinite ${i * 0.5}s`;
     });
 }
 
@@ -395,8 +474,8 @@ function finishSpin() {
 
     resultPopup.classList.remove('hidden');
 
-    // Animate decorative boxes
-    animateBaseDecorations();
+    // Animate decorative shapes
+    animateDecoShapes();
 }
 
 
