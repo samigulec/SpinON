@@ -762,11 +762,17 @@ function initializeApps() {
 }
 
 async function openExternalApp(url) {
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 2000)
+    );
+
     try {
-        await sdk.actions.openUrl(url);
+        await Promise.race([
+            sdk.actions.openUrl(url),
+            timeoutPromise
+        ]);
     } catch (e) {
-        console.log('SDK openUrl failed, using fallback');
-        window.open(url, '_blank');
+        window.location.href = url;
     }
 }
 
