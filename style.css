@@ -630,19 +630,20 @@ body {
     transform: translateX(-50%) translateY(150%);
     width: 92%;
     max-width: 380px;
-    min-height: 120px;
-    background: linear-gradient(135deg, rgba(20, 45, 100, 0.98) 0%, rgba(12, 25, 60, 0.99) 100%);
+    background: linear-gradient(145deg, rgba(15, 35, 80, 0.98) 0%, rgba(8, 20, 50, 0.99) 100%);
     border-radius: 16px;
-    border: 1.5px solid rgba(100, 150, 220, 0.4);
+    border: 1.5px solid rgba(100, 150, 220, 0.35);
     z-index: 90;
     box-shadow:
-        0 12px 32px rgba(0, 30, 100, 0.6),
-        0 4px 12px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 12px 32px rgba(0, 20, 80, 0.6),
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .pano-banner.show {
@@ -650,6 +651,33 @@ body {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+}
+
+.pano-close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 26px;
+    height: 26px;
+    background: rgba(30, 50, 90, 0.8);
+    border: 1px solid rgba(100, 140, 200, 0.3);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.pano-close:hover {
+    background: rgba(50, 70, 120, 0.9);
+    color: #fff;
+}
+
+.pano-close:active {
+    transform: scale(0.92);
 }
 
 .pano-link {
@@ -661,24 +689,33 @@ body {
     gap: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 90px;
+    border-radius: 16px 16px 0 0;
+}
+
+.pano-link:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .pano-link:active {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.pano-image-wrapper {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(30, 60, 120, 0.8) 0%, rgba(20, 40, 80, 0.9) 100%);
+    border: 2px solid rgba(100, 150, 220, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .pano-image {
-    width: 65px;
-    height: 65px;
-    min-width: 65px;
-    min-height: 65px;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 12px;
-    flex-shrink: 0;
-    border: 2px solid rgba(150, 180, 220, 0.3);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    background: rgba(0, 50, 100, 0.5);
+    display: block;
 }
 
 .pano-content {
@@ -688,7 +725,6 @@ body {
     justify-content: center;
     gap: 10px;
     min-width: 0;
-    overflow: hidden;
 }
 
 .pano-title {
@@ -717,6 +753,11 @@ body {
     box-shadow: 0 3px 10px rgba(100, 150, 200, 0.3);
 }
 
+.pano-cta:hover {
+    background: linear-gradient(135deg, #ffffff 0%, #d5e5fc 100%);
+    box-shadow: 0 4px 14px rgba(100, 150, 200, 0.5);
+}
+
 .pano-cta:active {
     transform: scale(0.97);
 }
@@ -725,9 +766,8 @@ body {
     display: flex;
     justify-content: center;
     gap: 8px;
-    padding: 10px 0 14px;
-    background: linear-gradient(180deg, transparent 0%, rgba(10, 25, 60, 0.5) 100%);
-    border-top: 1px solid rgba(100, 150, 220, 0.15);
+    padding: 10px 0 12px;
+    border-top: 1px solid rgba(100, 150, 220, 0.12);
 }
 
 .pano-dot {
@@ -746,28 +786,6 @@ body {
 .pano-dot.active {
     background: rgba(150, 190, 255, 0.9);
     box-shadow: 0 0 8px rgba(150, 190, 255, 0.5);
-}
-
-.pano-close {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    width: 28px;
-    height: 28px;
-    background: rgba(40, 60, 100, 0.6);
-    border: none;
-    border-radius: 50%;
-    color: rgba(255, 255, 255, 0.8);
-    cursor: pointer;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.pano-close:active {
-    transform: scale(0.92);
 }
 
 /* Confetti */
@@ -863,30 +881,26 @@ body {
     .pano-banner {
         bottom: calc(env(safe-area-inset-bottom, 0px) + 68px);
         max-width: 340px;
-        min-height: 100px;
     }
 
     .pano-link {
-        padding: 10px 12px;
+        padding: 12px;
         padding-right: 36px;
-        gap: 10px;
-        min-height: 75px;
+        gap: 12px;
     }
 
-    .pano-image {
-        width: 55px;
-        height: 55px;
-        min-width: 55px;
-        min-height: 55px;
+    .pano-image-wrapper {
+        width: 56px;
+        height: 56px;
     }
 
     .pano-title {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
     }
 
     .pano-cta {
-        padding: 8px 14px;
-        font-size: 0.75rem;
+        padding: 8px 16px;
+        font-size: 0.8rem;
     }
 }
 
@@ -924,30 +938,26 @@ body {
     .pano-banner {
         width: 94%;
         max-width: 340px;
-        min-height: 100px;
     }
 
     .pano-link {
-        padding: 10px 12px;
+        padding: 12px;
         padding-right: 36px;
         gap: 10px;
-        min-height: 75px;
     }
 
-    .pano-image {
-        width: 55px;
-        height: 55px;
-        min-width: 55px;
-        min-height: 55px;
+    .pano-image-wrapper {
+        width: 54px;
+        height: 54px;
     }
 
     .pano-title {
-        font-size: 0.8rem;
+        font-size: 0.82rem;
     }
 
     .pano-cta {
         padding: 8px 14px;
-        font-size: 0.75rem;
+        font-size: 0.78rem;
     }
 
     .nav-item {
@@ -987,25 +997,21 @@ body {
     .pano-banner {
         width: 94%;
         max-width: 300px;
-        min-height: 95px;
     }
 
     .pano-link {
         padding: 10px;
         padding-right: 32px;
         gap: 10px;
-        min-height: 70px;
     }
 
-    .pano-image {
+    .pano-image-wrapper {
         width: 50px;
         height: 50px;
-        min-width: 50px;
-        min-height: 50px;
     }
 
     .pano-title {
-        font-size: 0.75rem;
+        font-size: 0.78rem;
     }
 
     .pano-cta {

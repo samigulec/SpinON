@@ -519,7 +519,7 @@ const panoAds = [
 let currentPanoIndex = 0;
 let panoBannerVisible = true;
 let panoRotationInterval;
-let panoBanner, panoLink, panoClose, panoDots, panoImage, panoTitle, panoCta;
+let panoBanner, panoLink, panoClose, panoDots, panoImage, panoTitle, panoCta, panoImageWrapper;
 
 function showPano(index) {
     if (!panoBannerVisible || !panoBanner) return;
@@ -527,12 +527,21 @@ function showPano(index) {
     currentPanoIndex = index;
     const ad = panoAds[index];
 
+    if (panoImageWrapper) {
+        panoImageWrapper.style.display = 'block';
+    }
+
     panoImage.onerror = () => {
-        panoImage.style.display = 'none';
+        if (panoImageWrapper) {
+            panoImageWrapper.style.display = 'none';
+        }
     };
     panoImage.onload = () => {
-        panoImage.style.display = 'block';
+        if (panoImageWrapper) {
+            panoImageWrapper.style.display = 'block';
+        }
     };
+
     panoImage.src = ad.image;
     panoTitle.textContent = ad.title;
     panoCta.textContent = ad.cta;
@@ -554,6 +563,7 @@ function initializePano() {
     panoLink = document.getElementById('adLink');
     panoClose = document.getElementById('adClose');
     panoImage = document.getElementById('adImage');
+    panoImageWrapper = document.querySelector('.pano-image-wrapper');
     panoTitle = document.getElementById('adTitle');
     panoCta = document.getElementById('adCta');
     panoDots = document.querySelectorAll('.pano-dot');
