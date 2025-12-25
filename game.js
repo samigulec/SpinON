@@ -749,6 +749,25 @@ function initializeApps() {
     appsOverlay.addEventListener('click', () => {
         closeApps();
     });
+
+    const appCards = document.querySelectorAll('.app-card[data-app-url]');
+    appCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const url = card.dataset.appUrl;
+            if (url) {
+                openExternalApp(url);
+            }
+        });
+    });
+}
+
+async function openExternalApp(url) {
+    try {
+        await sdk.actions.openUrl(url);
+    } catch (e) {
+        console.log('SDK openUrl failed, using fallback');
+        window.open(url, '_blank');
+    }
 }
 
 function openApps() {
