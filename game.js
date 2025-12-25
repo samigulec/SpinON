@@ -230,12 +230,14 @@ function drawWheel(rotation = 0) {
             ctx.stroke();
             ctx.restore();
         } else {
-            // Draw USDC value text
             ctx.save();
             ctx.translate(iconX, iconY);
-            ctx.rotate(midAngle + Math.PI / 2);
+            let textAngle = midAngle + Math.PI / 2;
+            if (midAngle > Math.PI / 2 && midAngle < (3 * Math.PI) / 2) {
+                textAngle += Math.PI;
+            }
+            ctx.rotate(textAngle);
 
-            // Value text
             ctx.font = 'bold 13px SF Pro Display, -apple-system, sans-serif';
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
