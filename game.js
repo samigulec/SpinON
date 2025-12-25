@@ -517,41 +517,7 @@ function finishSpin() {
 
 // Create favicon
 function createFavicon() {
-    const faviconCanvas = document.createElement('canvas');
-    faviconCanvas.width = 32;
-    faviconCanvas.height = 32;
-    const fctx = faviconCanvas.getContext('2d');
-
-    const center = 16;
-    const radius = 14;
-    const segmentAngle = (2 * Math.PI) / segments.length;
-
-    segments.forEach((segment, i) => {
-        const startAngle = i * segmentAngle - Math.PI / 2;
-        const endAngle = startAngle + segmentAngle;
-
-        fctx.beginPath();
-        fctx.moveTo(center, center);
-        fctx.arc(center, center, radius, startAngle, endAngle);
-        fctx.closePath();
-        fctx.fillStyle = segment.color;
-        fctx.fill();
-    });
-
-    fctx.beginPath();
-    fctx.arc(center, center, 3, 0, 2 * Math.PI);
-    fctx.fillStyle = '#001233';
-    fctx.fill();
-
-    fctx.fillStyle = '#4285F4';
-    fctx.beginPath();
-    fctx.moveTo(center, 0);
-    fctx.lineTo(center - 4, 6);
-    fctx.lineTo(center + 4, 6);
-    fctx.closePath();
-    fctx.fill();
-
-    document.getElementById('favicon').href = faviconCanvas.toDataURL('image/png');
+    document.getElementById('favicon').href = 'spinon_logo.png';
 }
 
 // Sparkle effect when spinning - optimized
