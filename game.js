@@ -148,7 +148,30 @@ async function switchToBase() {
 function updateWalletDisplay() {
     const walletEl = document.getElementById('walletAddress');
     const walletCard = document.querySelector('.wallet-card');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const networkIndicator = document.getElementById('networkIndicator');
     if (!walletEl) return;
+
+    const isConnected = walletAddress || farcasterUser;
+    const isCorrectNetwork = currentChainId === BASE_CHAIN_ID || !currentChainId;
+
+    if (connectionStatus) {
+        if (isConnected) {
+            connectionStatus.textContent = 'Connected';
+            connectionStatus.classList.remove('disconnected');
+        } else {
+            connectionStatus.textContent = 'Not Connected';
+            connectionStatus.classList.add('disconnected');
+        }
+    }
+
+    if (networkIndicator) {
+        if (!isCorrectNetwork) {
+            networkIndicator.classList.add('wrong-network');
+        } else {
+            networkIndicator.classList.remove('wrong-network');
+        }
+    }
 
     if (walletCard?.classList.contains('wrong-network')) return;
 
