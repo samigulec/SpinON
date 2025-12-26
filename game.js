@@ -779,7 +779,6 @@ let statsModal, statsClose, statsOverlay;
 function initializeNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const homeBtn = document.getElementById('homeBtn');
-    const statsBtn = document.getElementById('statsBtn');
     const leaderboardBtn = document.getElementById('leaderboardBtn');
 
     function setActiveNav(btn) {
@@ -790,12 +789,6 @@ function initializeNavigation() {
     if (homeBtn) {
         homeBtn.addEventListener('click', () => {
             setActiveNav(homeBtn);
-        });
-    }
-
-    if (statsBtn) {
-        statsBtn.addEventListener('click', () => {
-            openStats();
         });
     }
 
