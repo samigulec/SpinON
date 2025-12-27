@@ -153,6 +153,28 @@ function updateNetworkStatus() {
     }
 }
 
+async function connectWallet() {
+    const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
+    if (!provider) {
+        showSpinStatus('Wallet provider not available', true);
+        return false;
+    }
+
+    try {
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
+        if (accounts && accounts.length > 0) {
+            walletAddress = accounts[0];
+            updateWalletDisplay();
+            await checkNetwork();
+            return true;
+        }
+    } catch (e) {
+        console.error('Wallet connection error:', e);
+        showSpinStatus('Could not connect wallet', true);
+    }
+    return false;
+}
+
 async function switchToBase() {
     const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
     if (!provider) return;
@@ -214,10 +236,13 @@ function updateWalletDisplay() {
 
     if (walletAddress) {
         walletEl.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-3)}`;
+        if (walletCard) walletCard.onclick = null;
     } else if (farcasterUser?.username) {
         walletEl.textContent = `@${farcasterUser.username}`;
+        if (walletCard) walletCard.onclick = connectWallet;
     } else {
-        walletEl.textContent = '0x...';
+        walletEl.textContent = 'Connect Wallet';
+        if (walletCard) walletCard.onclick = connectWallet;
     }
 }
 
@@ -641,6 +666,16 @@ function hideSpinStatus() {
 // Spin the wheel
 async function spinWheel() {
     if (isSpinning) return;
+
+    if (!walletAddress) {
+        showSpinStatus('Connecting wallet...');
+        const connected = await connectWallet();
+        if (!connected) {
+            showSpinStatus('Please connect your wallet first', true);
+            setTimeout(hideSpinStatus, 3000);
+            return;
+        }
+    }
 
     showSpinStatus('Waiting for transaction approval...');
 
