@@ -14,29 +14,8 @@ const BASE_CHAIN_ID = 8453;
 const SPINON_CONTRACT_ADDRESS = '0xd255Ed0b4ccbd33a59B87154683585795a9b6755';
 const SPIN_FEE = '0.0001';
 
-const SPINON_ABI = [
-    {
-        "inputs": [],
-        "name": "spin",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "spinFee",
-        "outputs": [{"type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"type": "address"}],
-        "name": "userSpins",
-        "outputs": [{"type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
+const SPIN_FUNCTION_SELECTOR = '0xf0acd7d5';
+const SPIN_FEE_SELECTOR = '0x2c4106bd';
 
 let farcasterUser = null;
 let currentChainId = null;
@@ -516,46 +495,75 @@ function createConfetti() {
     setTimeout(() => confettiElements.forEach(c => c.remove()), 4000);
 }
 
+async function getSpinFeeFromContract() {
+    try {
+        const response = await fetch('https://mainnet.base.org', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'eth_call',
+                params: [{
+                    to: SPINON_CONTRACT_ADDRESS,
+                    data: SPIN_FEE_SELECTOR
+                }, 'latest']
+            })
+        });
+        const data = await response.json();
+        if (data.result && data.result !== '0x') {
+            return BigInt(data.result).toString();
+        }
+    } catch (e) {
+        console.log('Could not fetch spinFee from contract:', e);
+    }
+    return BigInt(Math.floor(parseFloat(SPIN_FEE) * 1e18)).toString();
+}
+
 async function executeContractSpin() {
-    if (!window.ethereum) {
-        throw new Error('Wallet not connected');
-    }
+    const spinFeeWei = await getSpinFeeFromContract();
+    const spinFunctionData = SPIN_FUNCTION_SELECTOR;
 
-    if (currentChainId !== BASE_CHAIN_ID) {
-        await switchToBase();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (currentChainId !== BASE_CHAIN_ID) {
-            throw new Error('Please switch to Base network');
+    try {
+        const result = await sdk.actions.sendTransaction({
+            chainId: `eip155:${BASE_CHAIN_ID}`,
+            transaction: {
+                to: SPINON_CONTRACT_ADDRESS,
+                value: spinFeeWei,
+                data: spinFunctionData
+            }
+        });
+
+        if (result && result.transactionHash) {
+            return result.transactionHash;
         }
-    }
 
-    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-    if (!accounts || accounts.length === 0) {
-        const newAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!newAccounts || newAccounts.length === 0) {
-            throw new Error('Please connect your wallet');
+        throw new Error('Transaction failed');
+    } catch (sdkError) {
+        console.log('SDK transaction failed, trying window.ethereum:', sdkError);
+
+        if (!window.ethereum) {
+            throw new Error('Wallet not connected');
         }
+
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+        }
+
+        const hexValue = '0x' + BigInt(spinFeeWei).toString(16);
+
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                to: SPINON_CONTRACT_ADDRESS,
+                value: hexValue,
+                data: spinFunctionData
+            }]
+        });
+
+        return txHash;
     }
-
-    const spinFeeWei = '0x' + (BigInt(Math.floor(parseFloat(SPIN_FEE) * 1e18))).toString(16);
-
-    const iface = {
-        encodeFunctionData: () => '0xbf6a2490'
-    };
-
-    const txParams = {
-        from: accounts[0] || walletAddress,
-        to: SPINON_CONTRACT_ADDRESS,
-        value: spinFeeWei,
-        data: iface.encodeFunctionData()
-    };
-
-    const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [txParams]
-    });
-
-    return txHash;
 }
 
 function showSpinStatus(message, isError = false) {
