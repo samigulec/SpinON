@@ -22,16 +22,34 @@ let currentChainId = null;
 let walletAddress = null;
 let userId = null;
 
+function extractWalletAddress(user) {
+    if (!user) return null;
+    if (user.connectedAddress) return user.connectedAddress;
+    if (user.custody_address) return user.custody_address;
+    if (user.custodyAddress) return user.custodyAddress;
+    if (user.verifiedAddresses) {
+        if (Array.isArray(user.verifiedAddresses) && user.verifiedAddresses.length > 0) {
+            return user.verifiedAddresses[0];
+        }
+        if (user.verifiedAddresses.ethAddresses && user.verifiedAddresses.ethAddresses.length > 0) {
+            return user.verifiedAddresses.ethAddresses[0];
+        }
+    }
+    if (user.verifications && user.verifications.length > 0) {
+        return user.verifications[0];
+    }
+    return null;
+}
+
 async function initFarcaster() {
     try {
         const context = await sdk.context;
+        console.log('Farcaster context:', context);
         if (context?.user) {
             farcasterUser = context.user;
-            walletAddress = context.user.connectedAddress ||
-                           context.user.custody_address ||
-                           (context.user.verifiedAddresses && context.user.verifiedAddresses[0]) ||
-                           null;
+            walletAddress = extractWalletAddress(context.user);
             userId = context.user.fid?.toString() || walletAddress || null;
+            console.log('Wallet address found:', walletAddress);
         }
 
         const walletProvider = sdk.wallet?.getEthereumProvider?.() || sdk.wallet?.ethProvider;
@@ -154,24 +172,45 @@ function updateNetworkStatus() {
 }
 
 async function connectWallet() {
-    const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
-    if (!provider) {
-        showSpinStatus('Wallet provider not available', true);
-        return false;
-    }
-
     try {
-        const accounts = await provider.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-            walletAddress = accounts[0];
-            updateWalletDisplay();
-            await checkNetwork();
-            return true;
+        const context = await sdk.context;
+        console.log('Connect wallet - context:', context);
+        if (context?.user) {
+            walletAddress = extractWalletAddress(context.user);
+            console.log('Connect wallet - extracted address:', walletAddress);
+
+            if (walletAddress) {
+                updateWalletDisplay();
+                await checkNetwork();
+                return true;
+            }
         }
     } catch (e) {
-        console.error('Wallet connection error:', e);
-        showSpinStatus('Could not connect wallet', true);
+        console.log('Farcaster context check failed:', e);
     }
+
+    const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
+
+    if (provider) {
+        try {
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            if (accounts && accounts.length > 0) {
+                walletAddress = accounts[0];
+                updateWalletDisplay();
+                await checkNetwork();
+                return true;
+            }
+        } catch (e) {
+            console.error('Provider wallet connection error:', e);
+        }
+    }
+
+    if (sdk?.wallet?.sendTransaction) {
+        console.log('SDK wallet.sendTransaction available, proceeding without explicit wallet address');
+        return true;
+    }
+
+    showSpinStatus('Wallet connection failed. Open in Warpcast.', true);
     return false;
 }
 
@@ -588,41 +627,53 @@ async function executeContractSpin() {
 
     console.log('Transaction params:', { to: toAddress, value: hexValue, data: spinFunctionData });
 
-    let provider = null;
-    let fromAddress = walletAddress;
-
-    if (sdk && sdk.wallet) {
-        if (typeof sdk.wallet.getEthereumProvider === 'function') {
-            provider = sdk.wallet.getEthereumProvider();
-            console.log('Using sdk.wallet.getEthereumProvider()');
-        } else if (sdk.wallet.ethProvider) {
-            provider = sdk.wallet.ethProvider;
-            console.log('Using sdk.wallet.ethProvider');
+    if (sdk?.wallet?.sendTransaction) {
+        try {
+            console.log('Using sdk.wallet.sendTransaction');
+            const result = await sdk.wallet.sendTransaction({
+                chainId: `eip155:${BASE_CHAIN_ID}`,
+                transaction: {
+                    to: toAddress,
+                    value: hexValue,
+                    data: spinFunctionData
+                }
+            });
+            console.log('SDK sendTransaction result:', result);
+            if (result?.transactionHash) {
+                return result.transactionHash;
+            }
+            if (typeof result === 'string') {
+                return result;
+            }
+        } catch (e) {
+            console.error('SDK sendTransaction error:', e);
+            throw new Error(e.message || 'Transaction rejected');
         }
     }
 
-    if (!provider && window.ethereum) {
-        provider = window.ethereum;
-        console.log('Using window.ethereum');
-    }
+    let provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
 
     if (!provider) {
         throw new Error('No wallet provider available');
     }
 
-    try {
-        const accounts = await provider.request({ method: 'eth_accounts' });
-        console.log('Accounts:', accounts);
-        if (accounts && accounts.length > 0) {
-            fromAddress = accounts[0];
-        } else {
-            const requestedAccounts = await provider.request({ method: 'eth_requestAccounts' });
-            if (requestedAccounts && requestedAccounts.length > 0) {
-                fromAddress = requestedAccounts[0];
+    let fromAddress = walletAddress;
+
+    if (!fromAddress) {
+        try {
+            const accounts = await provider.request({ method: 'eth_accounts' });
+            console.log('Accounts:', accounts);
+            if (accounts && accounts.length > 0) {
+                fromAddress = accounts[0];
+            } else {
+                const requestedAccounts = await provider.request({ method: 'eth_requestAccounts' });
+                if (requestedAccounts && requestedAccounts.length > 0) {
+                    fromAddress = requestedAccounts[0];
+                }
             }
+        } catch (e) {
+            console.log('Account request error:', e);
         }
-    } catch (e) {
-        console.log('Account request error:', e);
     }
 
     if (!fromAddress) {
@@ -667,10 +718,12 @@ function hideSpinStatus() {
 async function spinWheel() {
     if (isSpinning) return;
 
-    if (!walletAddress) {
+    const hasSDKWallet = sdk?.wallet?.sendTransaction;
+
+    if (!walletAddress && !hasSDKWallet) {
         showSpinStatus('Connecting wallet...');
         const connected = await connectWallet();
-        if (!connected) {
+        if (!connected && !sdk?.wallet?.sendTransaction) {
             showSpinStatus('Please connect your wallet first', true);
             setTimeout(hideSpinStatus, 3000);
             return;
