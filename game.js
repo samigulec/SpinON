@@ -11,11 +11,14 @@ import {
 
 const BASE_CHAIN_ID = 8453;
 
-const SPINON_CONTRACT_ADDRESS = '0xd255Ed0b4ccbd33a59B87154683585795a9b6755';
+const SPINON_CONTRACT_ADDRESS = '0xf4387897225ac65BA59858148D3c2BeFCdA8075C';
 const SPIN_FEE = '0.0001';
 
-const SPIN_FUNCTION_SELECTOR = '0xf0acd7d5';
-const SPIN_FEE_SELECTOR = '0x2c4106bd';
+// Function Selectors
+const SPIN_FUNCTION_SELECTOR = '0xf0acd7d5';           // spin()
+const SPIN_FEE_SELECTOR = '0x2c4106bd';               // spinFee()
+const CLAIM_WINNINGS_SELECTOR = '0xb401faf1';         // claimWinnings()
+const PENDING_WINNINGS_SELECTOR = '0x68463349';       // pendingWinnings(address)
 
 let farcasterUser = null;
 let currentChainId = null;
@@ -615,6 +618,94 @@ async function getSpinFeeFromContract() {
     return BigInt(Math.floor(parseFloat(SPIN_FEE) * 1e18)).toString();
 }
 
+// Get pending winnings for an address
+async function getPendingWinnings(address) {
+    if (!address) return '0';
+    try {
+        // Encode: pendingWinnings(address) = selector + address padded to 32 bytes
+        const paddedAddress = address.toLowerCase().replace('0x', '').padStart(64, '0');
+        const data = PENDING_WINNINGS_SELECTOR + paddedAddress;
+        
+        const response = await fetch('https://mainnet.base.org', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'eth_call',
+                params: [{
+                    to: SPINON_CONTRACT_ADDRESS,
+                    data: data
+                }, 'latest']
+            })
+        });
+        const result = await response.json();
+        if (result.result && result.result !== '0x') {
+            const weiValue = BigInt(result.result);
+            return (Number(weiValue) / 1e18).toFixed(6);
+        }
+    } catch (e) {
+        console.error('Error fetching pending winnings:', e);
+    }
+    return '0';
+}
+
+// Claim winnings from contract
+async function claimWinnings() {
+    if (!walletAddress) {
+        showSpinStatus('Please connect your wallet first', true);
+        setTimeout(hideSpinStatus, 3000);
+        return;
+    }
+
+    showSpinStatus('Claiming winnings...');
+
+    try {
+        const toAddress = String(SPINON_CONTRACT_ADDRESS).toLowerCase();
+
+        if (sdk?.wallet?.sendTransaction) {
+            const result = await sdk.wallet.sendTransaction({
+                chainId: `eip155:${BASE_CHAIN_ID}`,
+                transaction: {
+                    to: toAddress,
+                    value: '0x0',
+                    data: CLAIM_WINNINGS_SELECTOR
+                }
+            });
+            console.log('Claim transaction result:', result);
+            showSpinStatus('Winnings claimed successfully! 🎉');
+            setTimeout(hideSpinStatus, 3000);
+            return result;
+        }
+
+        const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
+        if (!provider) {
+            throw new Error('No wallet provider available');
+        }
+
+        const txParams = {
+            from: walletAddress.toLowerCase(),
+            to: toAddress,
+            value: '0x0',
+            data: CLAIM_WINNINGS_SELECTOR
+        };
+
+        const txHash = await provider.request({
+            method: 'eth_sendTransaction',
+            params: [txParams]
+        });
+
+        console.log('Claim transaction hash:', txHash);
+        showSpinStatus('Winnings claimed successfully! 🎉');
+        setTimeout(hideSpinStatus, 3000);
+        return txHash;
+    } catch (error) {
+        console.error('Claim winnings failed:', error);
+        showSpinStatus(error.message || 'Claim failed', true);
+        setTimeout(hideSpinStatus, 3000);
+    }
+}
+
 async function executeContractSpin() {
     const spinFeeWei = await getSpinFeeFromContract();
     const spinFunctionData = String(SPIN_FUNCTION_SELECTOR);
@@ -1045,8 +1136,10 @@ function initializeProfile() {
     });
 
     if (withdrawBtn) {
-        withdrawBtn.addEventListener('click', () => {
-            alert('Withdraw functionality coming soon!');
+        withdrawBtn.addEventListener('click', async () => {
+            await claimWinnings();
+            // Refresh profile data after claiming
+            setTimeout(() => updateProfileData(), 2000);
         });
     }
 }
@@ -1509,10 +1602,10 @@ function closeApps() {
     document.body.style.overflow = '';
 }
 
-function openProfile() {
-    updateProfileData();
+async function openProfile() {
     profileModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    await updateProfileData();
 }
 
 function closeProfile() {
@@ -1520,7 +1613,7 @@ function closeProfile() {
     document.body.style.overflow = '';
 }
 
-function updateProfileData() {
+async function updateProfileData() {
     const profilePfp = document.getElementById('profilePfp');
     const profileName = document.getElementById('profileName');
     const profileHandle = document.getElementById('profileHandle');
@@ -1528,6 +1621,7 @@ function updateProfileData() {
     const profileTotalRewards = document.getElementById('profileTotalRewards');
     const profileWinRate = document.getElementById('profileWinRate');
     const profileUsdcBalance = document.getElementById('profileUsdcBalance');
+    const withdrawBtn = document.getElementById('withdrawBtn');
 
     if (farcasterUser) {
         if (farcasterUser.pfpUrl) {
@@ -1546,7 +1640,24 @@ function updateProfileData() {
     const winRate = totalSpins > 0 ? Math.round((totalWins / totalSpins) * 100) : 0;
     profileWinRate.textContent = `${winRate}%`;
 
-    profileUsdcBalance.textContent = `${totalWinnings.toFixed(3)} USDC`;
+    // Fetch pending winnings from contract
+    if (walletAddress) {
+        const pendingETH = await getPendingWinnings(walletAddress);
+        profileUsdcBalance.textContent = `${pendingETH} ETH`;
+        
+        // Enable/disable withdraw button based on pending winnings
+        if (withdrawBtn) {
+            const hasPending = parseFloat(pendingETH) > 0;
+            withdrawBtn.disabled = !hasPending;
+            withdrawBtn.textContent = hasPending ? 'Claim' : 'No Winnings';
+        }
+    } else {
+        profileUsdcBalance.textContent = '0.000 ETH';
+        if (withdrawBtn) {
+            withdrawBtn.disabled = true;
+            withdrawBtn.textContent = 'Connect Wallet';
+        }
+    }
 }
 
 // Initialize
