@@ -11,8 +11,8 @@ import {
 
 const BASE_CHAIN_ID = 8453;
 
-const SPINON_CONTRACT_ADDRESS = '0xf4387897225ac65BA59858148D3c2BeFCdA8075C';
-const SPIN_FEE = '0.0001';
+const SPINON_CONTRACT_ADDRESS = '0x5dd7116515Bf79e173cdad341402fE8E45C373aD';
+const SPIN_FEE = '0.000032';  // 0.000032 ETH
 
 // Function Selectors
 const SPIN_FUNCTION_SELECTOR = '0xf0acd7d5';           // spin()
