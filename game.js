@@ -126,13 +126,20 @@ async function syncUserData() {
 
 async function checkNetwork() {
     try {
-        const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
-        if (provider) {
+        // In Farcaster frame, assume Base network
+        if (sdk?.wallet?.sendTransaction) {
+            currentChainId = BASE_CHAIN_ID;
+            updateNetworkStatus();
+            return;
+        }
+
+        const provider = window.ethereum;
+        if (provider && typeof provider.request === 'function') {
             const chainId = await provider.request({ method: 'eth_chainId' });
             currentChainId = parseInt(chainId, 16);
             updateNetworkStatus();
 
-            if (provider.on) {
+            if (typeof provider.on === 'function') {
                 provider.on('chainChanged', (newChainId) => {
                     currentChainId = parseInt(newChainId, 16);
                     updateNetworkStatus();
@@ -146,6 +153,7 @@ async function checkNetwork() {
                 });
             }
         } else {
+            // Default to Base for Farcaster frames
             currentChainId = BASE_CHAIN_ID;
             updateNetworkStatus();
         }
@@ -175,6 +183,7 @@ function updateNetworkStatus() {
 }
 
 async function connectWallet() {
+    // Method 1: Try to get wallet from Farcaster context
     try {
         const context = await sdk.context;
         console.log('Connect wallet - context:', context);
@@ -192,9 +201,15 @@ async function connectWallet() {
         console.log('Farcaster context check failed:', e);
     }
 
-    const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
+    // Method 2: Check if SDK wallet.sendTransaction is available
+    if (sdk?.wallet?.sendTransaction) {
+        console.log('SDK wallet.sendTransaction available, proceeding without explicit wallet address');
+        return true;
+    }
 
-    if (provider) {
+    // Method 3: Try standard provider (window.ethereum)
+    const provider = window.ethereum;
+    if (provider && typeof provider.request === 'function') {
         try {
             const accounts = await provider.request({ method: 'eth_requestAccounts' });
             if (accounts && accounts.length > 0) {
@@ -208,18 +223,34 @@ async function connectWallet() {
         }
     }
 
-    if (sdk?.wallet?.sendTransaction) {
-        console.log('SDK wallet.sendTransaction available, proceeding without explicit wallet address');
-        return true;
+    // Method 4: Try SDK ethereum provider with proper check
+    try {
+        const sdkProvider = sdk?.wallet?.getEthereumProvider?.();
+        if (sdkProvider && typeof sdkProvider.request === 'function') {
+            const accounts = await sdkProvider.request({ method: 'eth_requestAccounts' });
+            if (accounts && accounts.length > 0) {
+                walletAddress = accounts[0];
+                updateWalletDisplay();
+                await checkNetwork();
+                return true;
+            }
+        }
+    } catch (e) {
+        console.log('SDK provider request failed:', e);
     }
 
-    showSpinStatus('Wallet connection failed. Open in Warpcast.', true);
-    return false;
+    // If we reach here in a Farcaster frame, we can still try to send transactions
+    // The SDK might handle wallet connection internally
+    console.log('No wallet address found, but may still work via SDK');
+    return sdk?.wallet?.sendTransaction ? true : false;
 }
 
 async function switchToBase() {
-    const provider = sdk?.wallet?.getEthereumProvider?.() || sdk?.wallet?.ethProvider || window.ethereum;
-    if (!provider) return;
+    const provider = window.ethereum;
+    if (!provider || typeof provider.request !== 'function') {
+        console.log('No provider available to switch network');
+        return;
+    }
 
     try {
         await provider.request({
@@ -811,14 +842,17 @@ async function spinWheel() {
 
     const hasSDKWallet = sdk?.wallet?.sendTransaction;
 
-    if (!walletAddress && !hasSDKWallet) {
+    // Try to connect if we don't have a wallet address
+    if (!walletAddress) {
         showSpinStatus('Connecting wallet...');
-        const connected = await connectWallet();
-        if (!connected && !sdk?.wallet?.sendTransaction) {
-            showSpinStatus('Please connect your wallet first', true);
-            setTimeout(hideSpinStatus, 3000);
-            return;
-        }
+        await connectWallet();
+    }
+
+    // Check if we can proceed (either have wallet address or SDK can send transactions)
+    if (!walletAddress && !hasSDKWallet) {
+        showSpinStatus('Please open in Warpcast to spin', true);
+        setTimeout(hideSpinStatus, 3000);
+        return;
     }
 
     showSpinStatus('Waiting for transaction approval...');
