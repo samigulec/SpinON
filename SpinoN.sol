@@ -9,7 +9,7 @@ contract SpinON {
     address public owner;
     
     // Spin ücreti (Varsayılan: 0.0001 ETH)
-    uint256 public spinFee = 0.0001 ether;
+    uint256 public spinFee = 0.0000032 ether;
     
     // Ödül çarpanı (Örn: 120 = 1.2x)
     uint256 public constant WIN_MULTIPLIER = 120; 

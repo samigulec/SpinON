@@ -201,13 +201,31 @@ async function connectWallet() {
         console.log('Farcaster context check failed:', e);
     }
 
-    // Method 2: Check if SDK wallet.sendTransaction is available
+    // Method 2: Try SDK ethProvider (works on mobile Farcaster)
+    const sdkEthProvider = sdk?.wallet?.ethProvider;
+    if (sdkEthProvider) {
+        try {
+            console.log('Trying sdk.wallet.ethProvider for connection');
+            const accounts = await sdkEthProvider.request({ method: 'eth_requestAccounts' });
+            if (accounts && accounts.length > 0) {
+                walletAddress = accounts[0];
+                console.log('Connected via SDK ethProvider:', walletAddress);
+                updateWalletDisplay();
+                await checkNetwork();
+                return true;
+            }
+        } catch (e) {
+            console.log('SDK ethProvider connection failed:', e);
+        }
+    }
+
+    // Method 3: Check if SDK wallet.sendTransaction is available
     if (sdk?.wallet?.sendTransaction) {
         console.log('SDK wallet.sendTransaction available, proceeding without explicit wallet address');
         return true;
     }
 
-    // Method 3: Try standard provider (window.ethereum)
+    // Method 4: Try standard provider (window.ethereum)
     const provider = window.ethereum;
     if (provider && typeof provider.request === 'function') {
         try {
@@ -223,7 +241,7 @@ async function connectWallet() {
         }
     }
 
-    // Method 4: Try SDK ethereum provider with proper check
+    // Method 5: Try SDK getEthereumProvider
     try {
         const sdkProvider = sdk?.wallet?.getEthereumProvider?.();
         if (sdkProvider && typeof sdkProvider.request === 'function') {
@@ -745,34 +763,75 @@ async function executeContractSpin() {
 
     console.log('Transaction params:', { to: toAddress, value: hexValue, data: spinFunctionData });
 
-    // Method 1: Use Farcaster SDK wallet (primary for Farcaster frames)
+    // Method 1: Use Farcaster SDK sendTransaction (works on desktop)
     if (sdk?.wallet?.sendTransaction) {
-        console.log('Using sdk.wallet.sendTransaction');
-        const result = await sdk.wallet.sendTransaction({
-            chainId: `eip155:${BASE_CHAIN_ID}`,
-            transaction: {
-                to: toAddress,
-                value: hexValue,
-                data: spinFunctionData
-            }
-        });
-        console.log('SDK sendTransaction result:', result);
-        
-        // Handle various response formats
-        if (result?.transactionHash) {
-            return result.transactionHash;
+        try {
+            console.log('Trying sdk.wallet.sendTransaction');
+            const result = await sdk.wallet.sendTransaction({
+                chainId: `eip155:${BASE_CHAIN_ID}`,
+                transaction: {
+                    to: toAddress,
+                    value: hexValue,
+                    data: spinFunctionData
+                }
+            });
+            console.log('SDK sendTransaction result:', result);
+            
+            if (result?.transactionHash) return result.transactionHash;
+            if (result?.hash) return result.hash;
+            if (typeof result === 'string') return result;
+            return 'transaction_sent';
+        } catch (sdkError) {
+            console.log('sdk.wallet.sendTransaction failed, trying ethProvider:', sdkError);
         }
-        if (result?.hash) {
-            return result.hash;
-        }
-        if (typeof result === 'string') {
-            return result;
-        }
-        // If we get here, transaction was likely sent but we don't have hash
-        return 'transaction_sent';
     }
 
-    // Method 2: Use window.ethereum (for standard browsers with MetaMask etc.)
+    // Method 2: Use Farcaster SDK ethProvider (better for mobile)
+    const sdkProvider = sdk?.wallet?.ethProvider;
+    if (sdkProvider) {
+        try {
+            console.log('Trying sdk.wallet.ethProvider');
+            
+            // Get accounts from SDK provider
+            let fromAddress = walletAddress;
+            if (!fromAddress) {
+                try {
+                    const accounts = await sdkProvider.request({ method: 'eth_accounts' });
+                    if (accounts && accounts.length > 0) {
+                        fromAddress = accounts[0];
+                    } else {
+                        const requestedAccounts = await sdkProvider.request({ method: 'eth_requestAccounts' });
+                        if (requestedAccounts && requestedAccounts.length > 0) {
+                            fromAddress = requestedAccounts[0];
+                        }
+                    }
+                } catch (e) {
+                    console.log('SDK provider account request failed:', e);
+                }
+            }
+
+            if (fromAddress) {
+                const txParams = {
+                    from: fromAddress.toLowerCase(),
+                    to: toAddress,
+                    value: hexValue,
+                    data: spinFunctionData
+                };
+                
+                console.log('SDK ethProvider tx params:', txParams);
+                const txHash = await sdkProvider.request({
+                    method: 'eth_sendTransaction',
+                    params: [txParams]
+                });
+                console.log('SDK ethProvider transaction hash:', txHash);
+                return txHash;
+            }
+        } catch (providerError) {
+            console.log('SDK ethProvider failed:', providerError);
+        }
+    }
+
+    // Method 3: Use window.ethereum (for standard browsers with MetaMask etc.)
     const provider = window.ethereum;
     if (provider && typeof provider.request === 'function') {
         let fromAddress = walletAddress;
