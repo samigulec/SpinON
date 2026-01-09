@@ -6,7 +6,8 @@ import {
     getSpinHistory,
     syncLocalToDatabase,
     incrementStats,
-    getLeaderboard
+    getLeaderboard,
+    saveNotificationToken as saveNotificationTokenToDB
 } from './supabase.js';
 
 const BASE_CHAIN_ID = 8453;
@@ -24,6 +25,7 @@ let farcasterUser = null;
 let currentChainId = null;
 let walletAddress = null;
 let userId = null;
+let notificationDetails = null;
 
 function extractWalletAddress(user) {
     if (!user) return null;
@@ -55,6 +57,14 @@ async function initFarcaster() {
             console.log('Wallet address found:', walletAddress);
         }
 
+        // Get notification details if available
+        if (context?.client?.notificationDetails) {
+            notificationDetails = context.client.notificationDetails;
+            console.log('Notification details available:', notificationDetails);
+            // Save notification token to database
+            saveNotificationToken();
+        }
+
         const walletProvider = sdk.wallet?.getEthereumProvider?.() || sdk.wallet?.ethProvider;
         if (walletProvider) {
             try {
@@ -83,6 +93,44 @@ async function initFarcaster() {
             userId = walletAddress;
             syncUserData();
         }
+    }
+}
+
+// Request notification permission from user
+async function requestNotificationPermission() {
+    try {
+        if (!sdk?.actions?.requestNotificationPermission) {
+            console.log('Notification permission not available in SDK');
+            return false;
+        }
+        
+        const result = await sdk.actions.requestNotificationPermission();
+        console.log('Notification permission result:', result);
+        
+        if (result?.notificationDetails) {
+            notificationDetails = result.notificationDetails;
+            await saveNotificationToken();
+            showSpinStatus('Notifications enabled! 🔔');
+            setTimeout(hideSpinStatus, 2000);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error('Failed to request notification permission:', e);
+        return false;
+    }
+}
+
+// Save notification token to Supabase
+async function saveNotificationToken() {
+    if (!userId || !notificationDetails) return;
+    
+    try {
+        const { url, token } = notificationDetails;
+        const result = await saveNotificationTokenToDB(userId, farcasterUser?.fid, url, token);
+        console.log('Notification token saved:', result);
+    } catch (e) {
+        console.error('Failed to save notification token:', e);
     }
 }
 

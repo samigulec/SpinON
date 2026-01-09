@@ -158,3 +158,62 @@ export async function getLeaderboard(limit = 50) {
 
     return data || [];
 }
+
+// Notification Token Functions
+export async function saveNotificationToken(userId, fid, notificationUrl, notificationToken) {
+    if (!userId || !notificationToken) return null;
+
+    const { data, error } = await supabase
+        .from('notification_tokens')
+        .upsert({
+            user_id: userId,
+            fid: fid,
+            notification_url: notificationUrl,
+            notification_token: notificationToken,
+            is_active: true,
+            updated_at: new Date().toISOString()
+        }, {
+            onConflict: 'user_id'
+        })
+        .select()
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error saving notification token:', error);
+        return null;
+    }
+
+    return data;
+}
+
+export async function getActiveNotificationTokens() {
+    const { data, error } = await supabase
+        .from('notification_tokens')
+        .select('*')
+        .eq('is_active', true);
+
+    if (error) {
+        console.error('Error fetching notification tokens:', error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export async function deactivateNotificationToken(userId) {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+        .from('notification_tokens')
+        .update({ is_active: false })
+        .eq('user_id', userId)
+        .select()
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error deactivating notification token:', error);
+        return null;
+    }
+
+    return data;
+}
